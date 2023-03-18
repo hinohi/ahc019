@@ -10,6 +10,19 @@ pub enum FaceState {
     Satisfied,
 }
 
+pub struct GridBox {
+    d: usize,
+    grid: Grid3<u16>,
+    front: GridFront<FaceState>,
+    right: GridRight<FaceState>,
+}
+
+pub struct YetPointSet {
+    yet_yet: Vec<Point>,
+    yet: Vec<Point>,
+    can: Vec<Point>,
+}
+
 pub fn make_face(shadow: &[Vec<u8>]) -> Vec<FaceState> {
     let d = shadow.len();
     let mut v = vec![FaceState::Null; d * d];
@@ -23,40 +36,59 @@ pub fn make_face(shadow: &[Vec<u8>]) -> Vec<FaceState> {
     v
 }
 
-pub fn make_can_put_points(
-    d: usize,
-    grid: &Grid3<u16>,
-    front: &GridFront<FaceState>,
-    right: &GridRight<FaceState>,
-) -> YetPointSet {
-    use FaceState::*;
-    let mut yet_yet = Vec::new();
-    let mut yet = Vec::new();
-    let mut can = Vec::new();
-    for x in 0..d {
-        for y in 0..d {
-            for z in 0..d {
-                let p = Point::new(x, y, z);
-                match (front[p], right[p]) {
-                    (Yet, Yet) => yet_yet.push(p),
-                    (Yet, Satisfied) | (Satisfied, Yet) => yet.push(p),
-                    (Satisfied, Satisfied) => {
-                        if grid[p] == 0 {
-                            can.push(p)
-                        }
+impl GridBox {
+    pub fn new(d: usize, front: &[Vec<u8>], right: &[Vec<u8>]) -> GridBox {
+        let mut grid = Grid3::new(d, 0);
+        let front = GridFront::from_vec(d, make_face(&front));
+        let right = GridRight::from_vec(d, make_face(&right));
+        for x in 0..d {
+            for y in 0..d {
+                for z in 0..d {
+                    let p = Point::new(x, y, z);
+                    if front[p] == FaceState::Null || right[p] == FaceState::Null {
+                        grid[p] = !0;
                     }
-                    _ => (),
                 }
             }
         }
+        GridBox {
+            d,
+            grid,
+            front,
+            right,
+        }
     }
-    YetPointSet { yet_yet, yet, can }
-}
 
-pub struct YetPointSet {
-    yet_yet: Vec<Point>,
-    yet: Vec<Point>,
-    can: Vec<Point>,
+    pub fn make_can_put_points(&self) -> YetPointSet {
+        use FaceState::*;
+        let mut yet_yet = Vec::new();
+        let mut yet = Vec::new();
+        let mut can = Vec::new();
+        for x in 0..self.d {
+            for y in 0..self.d {
+                for z in 0..self.d {
+                    let p = Point::new(x, y, z);
+                    match (self.front[p], self.right[p]) {
+                        (Yet, Yet) => yet_yet.push(p),
+                        (Yet, Satisfied) | (Satisfied, Yet) => yet.push(p),
+                        (Satisfied, Satisfied) => {
+                            if self.grid[p] == 0 {
+                                can.push(p)
+                            }
+                        }
+                        _ => (),
+                    }
+                }
+            }
+        }
+        YetPointSet { yet_yet, yet, can }
+    }
+
+    pub fn put(&mut self, p: Point, block_id: u16) {
+        self.grid[p] = block_id;
+        self.front[p] = FaceState::Satisfied;
+        self.right[p] = FaceState::Satisfied;
+    }
 }
 
 impl YetPointSet {
@@ -77,10 +109,10 @@ impl YetPointSet {
     }
 }
 
-fn chose_next1(d: usize, grid: &Grid3<u16>, p: Point, directions: &[u8]) -> Option<Point> {
+pub fn chose_next1(grid: &GridBox, p: Point, directions: &[u8]) -> Option<Point> {
     for &dir in directions.iter() {
-        if let Some(q) = p.next_cell(d, dir) {
-            if grid[q] == 0 {
+        if let Some(q) = p.next_cell(grid.d, dir) {
+            if grid.grid[q] == 0 {
                 return Some(q);
             }
         }
@@ -88,18 +120,18 @@ fn chose_next1(d: usize, grid: &Grid3<u16>, p: Point, directions: &[u8]) -> Opti
     None
 }
 
-fn chose_next2(
-    d: usize,
-    grid_1: &Grid3<u16>,
-    grid_2: &Grid3<u16>,
+pub fn chose_next2(
+    grid_1: &GridBox,
+    grid_2: &GridBox,
     p1: Point,
     p2: Point,
     directions: &[u8],
 ) -> Option<(Point, Point)> {
+    let d = grid_1.d;
     for &dir in directions.iter() {
         if let Some(q1) = p1.next_cell(d, dir) {
             if let Some(q2) = p2.next_cell(d, dir) {
-                if grid_1[q1] == 0 && grid_2[q2] == 0 {
+                if grid_1.grid[q1] == 0 && grid_2.grid[q2] == 0 {
                     return Some((q1, q2));
                 }
             }
@@ -116,30 +148,13 @@ fn solve(
     front2: &[Vec<u8>],
     right2: &[Vec<u8>],
 ) -> Option<(u16, Vec<u16>, Vec<u16>, u64)> {
-    let mut grid_1 = Grid3::new(d, 0u16);
-    let mut grid_2 = Grid3::new(d, 0u16);
-    let mut grid_f1 = GridFront::from_vec(d, make_face(&front1));
-    let mut grid_r1 = GridRight::from_vec(d, make_face(&right1));
-    let mut grid_f2 = GridFront::from_vec(d, make_face(&front2));
-    let mut grid_r2 = GridRight::from_vec(d, make_face(&right2));
-    for x in 0..d {
-        for y in 0..d {
-            for z in 0..d {
-                let p = Point::new(x, y, z);
-                if grid_f1[p] == FaceState::Null || grid_r1[p] == FaceState::Null {
-                    grid_1[p] = !0;
-                }
-                if grid_f2[p] == FaceState::Null || grid_r2[p] == FaceState::Null {
-                    grid_2[p] = !0;
-                }
-            }
-        }
-    }
+    let mut grid_1 = GridBox::new(d, &front1, right1);
+    let mut grid_2 = GridBox::new(d, &front2, right2);
     let mut block_id = 1;
     let mut directions = [0, 1, 2, 3, 4, 5];
     loop {
-        let yet1 = make_can_put_points(d, &grid_1, &grid_f1, &grid_r1);
-        let yet2 = make_can_put_points(d, &grid_2, &grid_f2, &grid_r2);
+        let yet1 = grid_1.make_can_put_points();
+        let yet2 = grid_2.make_can_put_points();
         if yet1.satisfied() && yet2.satisfied() {
             break;
         }
@@ -148,13 +163,9 @@ fn solve(
         match (p1, p2) {
             (Some(mut p1), Some(mut p2)) => loop {
                 directions.shuffle(rng);
-                grid_1[p1] = block_id;
-                grid_2[p2] = block_id;
-                grid_f1[p1] = FaceState::Satisfied;
-                grid_r1[p1] = FaceState::Satisfied;
-                grid_f2[p2] = FaceState::Satisfied;
-                grid_r2[p2] = FaceState::Satisfied;
-                if let Some((q1, q2)) = chose_next2(d, &grid_1, &grid_2, p1, p2, &directions) {
+                grid_1.put(p1, block_id);
+                grid_2.put(p2, block_id);
+                if let Some((q1, q2)) = chose_next2(&grid_1, &grid_2, p1, p2, &directions) {
                     p1 = q1;
                     p2 = q2;
                 } else {
@@ -163,10 +174,8 @@ fn solve(
             },
             (Some(mut p), None) => loop {
                 directions.shuffle(rng);
-                grid_1[p] = block_id;
-                grid_f1[p] = FaceState::Satisfied;
-                grid_r1[p] = FaceState::Satisfied;
-                if let Some(q) = chose_next1(d, &grid_1, p, &directions) {
+                grid_1.put(p, block_id);
+                if let Some(q) = chose_next1(&grid_1, p, &directions) {
                     p = q;
                 } else {
                     break;
@@ -174,10 +183,8 @@ fn solve(
             },
             (None, Some(mut p)) => loop {
                 directions.shuffle(rng);
-                grid_2[p] = block_id;
-                grid_f2[p] = FaceState::Satisfied;
-                grid_r2[p] = FaceState::Satisfied;
-                if let Some(q) = chose_next1(d, &grid_2, p, &directions) {
+                grid_2.put(p, block_id);
+                if let Some(q) = chose_next1(&grid_2, p, &directions) {
                     p = q;
                 } else {
                     break;
@@ -187,7 +194,7 @@ fn solve(
         }
         block_id += 1;
     }
-    Some((block_id - 1, grid_1.data, grid_2.data, 100))
+    Some((block_id - 1, grid_1.grid.data, grid_2.grid.data, 100))
 }
 
 fn main() {
