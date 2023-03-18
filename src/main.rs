@@ -147,54 +147,70 @@ fn solve(
     right1: &[Vec<u8>],
     front2: &[Vec<u8>],
     right2: &[Vec<u8>],
-) -> Option<(u16, Vec<u16>, Vec<u16>, u64)> {
+) -> Option<(u16, Vec<u16>, Vec<u16>, f64)> {
+    fn single_update_loop(
+        rng: &mut Mcg128Xsl64,
+        directions: &mut [u8],
+        grid: &mut GridBox,
+        mut p: Point,
+        block_id: u16,
+    ) -> f64 {
+        let mut c = 0;
+        loop {
+            c += 1;
+            directions.shuffle(rng);
+            grid.put(p, block_id);
+            if let Some(q) = chose_next1(&grid, p, &directions) {
+                p = q;
+            } else {
+                break;
+            }
+        }
+        1.0 / c as f64 + c as f64
+    }
+
     let mut grid_1 = GridBox::new(d, &front1, right1);
     let mut grid_2 = GridBox::new(d, &front2, right2);
-    let mut block_id = 1;
+    let mut block_id = 0;
     let mut directions = [0, 1, 2, 3, 4, 5];
+    let mut score = 0.0;
+
     loop {
         let yet1 = grid_1.make_can_put_points();
         let yet2 = grid_2.make_can_put_points();
         if yet1.satisfied() && yet2.satisfied() {
             break;
         }
+        block_id += 1;
         let p1 = yet1.chose(rng);
         let p2 = yet2.chose(rng);
         match (p1, p2) {
-            (Some(mut p1), Some(mut p2)) => loop {
-                directions.shuffle(rng);
-                grid_1.put(p1, block_id);
-                grid_2.put(p2, block_id);
-                if let Some((q1, q2)) = chose_next2(&grid_1, &grid_2, p1, p2, &directions) {
-                    p1 = q1;
-                    p2 = q2;
-                } else {
-                    break;
+            (Some(mut p1), Some(mut p2)) => {
+                let mut c = 0;
+                loop {
+                    c += 1;
+                    directions.shuffle(rng);
+                    grid_1.put(p1, block_id);
+                    grid_2.put(p2, block_id);
+                    if let Some((q1, q2)) = chose_next2(&grid_1, &grid_2, p1, p2, &directions) {
+                        p1 = q1;
+                        p2 = q2;
+                    } else {
+                        break;
+                    }
                 }
-            },
-            (Some(mut p), None) => loop {
-                directions.shuffle(rng);
-                grid_1.put(p, block_id);
-                if let Some(q) = chose_next1(&grid_1, p, &directions) {
-                    p = q;
-                } else {
-                    break;
-                }
-            },
-            (None, Some(mut p)) => loop {
-                directions.shuffle(rng);
-                grid_2.put(p, block_id);
-                if let Some(q) = chose_next1(&grid_2, p, &directions) {
-                    p = q;
-                } else {
-                    break;
-                }
-            },
+                score += 1.0 / c as f64;
+            }
+            (Some(p), None) => {
+                score += single_update_loop(rng, &mut directions, &mut grid_1, p, block_id);
+            }
+            (None, Some(p)) => {
+                score += single_update_loop(rng, &mut directions, &mut grid_2, p, block_id);
+            }
             (None, None) => return None,
         }
-        block_id += 1;
     }
-    Some((block_id - 1, grid_1.grid.data, grid_2.grid.data, 100))
+    Some((block_id, grid_1.grid.data, grid_2.grid.data, score))
 }
 
 fn main() {
@@ -206,25 +222,31 @@ fn main() {
         right2: [Bytes; d],
     }
     let mut rng = Mcg128Xsl64::new(9085);
-    loop {
+    let mut best_score = std::f64::MAX;
+    let mut best = (0, Vec::new(), Vec::new());
+    for _ in 0..1000 {
         if let Some((n, g1, g2, score)) = solve(&mut rng, d, &front1, &right1, &front2, &right2) {
-            println!("{}", n);
-            for (i, &g) in g1.iter().enumerate() {
-                if i != 0 {
-                    print!(" ");
-                }
-                print!("{}", if g == !0 { 0 } else { g });
+            if score < best_score {
+                best_score = score;
+                best = (n, g1, g2);
             }
-            println!();
-            for (i, &g) in g2.iter().enumerate() {
-                if i != 0 {
-                    print!(" ");
-                }
-                print!("{}", if g == !0 { 0 } else { g });
-            }
-            println!();
-            eprintln!("{}", score);
         }
-        break;
     }
+    let (n, g1, g2) = best;
+    println!("{}", n);
+    for (i, &g) in g1.iter().enumerate() {
+        if i != 0 {
+            print!(" ");
+        }
+        print!("{}", if g == !0 { 0 } else { g });
+    }
+    println!();
+    for (i, &g) in g2.iter().enumerate() {
+        if i != 0 {
+            print!(" ");
+        }
+        print!("{}", if g == !0 { 0 } else { g });
+    }
+    println!();
+    eprintln!("{}", best_score);
 }
