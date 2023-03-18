@@ -134,7 +134,7 @@ pub fn parse_output(input: &Input, f: &str) -> Result<Output, String> {
     Ok(Output { n, b })
 }
 
-fn normalize(b: &Vec<(usize, usize, usize)>) -> Vec<(usize, usize, usize)> {
+fn normalize(b: &[(usize, usize, usize)]) -> Vec<(usize, usize, usize)> {
     let mut min_x = !0;
     let mut min_y = !0;
     let mut min_z = !0;
@@ -148,12 +148,16 @@ fn normalize(b: &Vec<(usize, usize, usize)>) -> Vec<(usize, usize, usize)> {
         .collect()
 }
 
-fn is_same(b1: &Vec<(usize, usize, usize)>, b2: &Vec<(usize, usize, usize)>) -> bool {
+fn is_same(b1: &[(usize, usize, usize)], b2: &[(usize, usize, usize)]) -> bool {
     if b1.len() != b2.len() {
         return false;
     }
-    let mut b1 = normalize(&b1);
-    let mut b2 = normalize(&b2);
+    let b1 = {
+        let mut b1 = normalize(b1);
+        b1.sort();
+        b1
+    };
+    let mut b2 = normalize(b2);
     let mut max_x = 0;
     let mut max_y = 0;
     let mut max_z = 0;
@@ -162,7 +166,6 @@ fn is_same(b1: &Vec<(usize, usize, usize)>, b2: &Vec<(usize, usize, usize)>) -> 
         max_y.setmax(y);
         max_z.setmax(z);
     }
-    b1.sort();
     for i in 0..6 {
         for _ in 0..4 {
             b2.sort();
