@@ -3,19 +3,19 @@ use std::ops::{Index, IndexMut};
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Point(u8, u8, u8);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Grid3<T> {
     d: u8,
     pub data: Vec<T>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GridFront<T> {
     d: u8,
     pub data: Vec<T>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GridRight<T> {
     d: u8,
     pub data: Vec<T>,
