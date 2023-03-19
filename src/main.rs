@@ -232,6 +232,16 @@ fn solve(
     Some((block_id, grid_1.grid.data, grid_2.grid.data, score))
 }
 
+fn print_ans(v: &[u16]) {
+    for (i, &g) in v.iter().enumerate() {
+        if i != 0 {
+            print!(" ");
+        }
+        print!("{}", if g == !0 { 0 } else { g });
+    }
+    println!();
+}
+
 fn main() {
     let start = Instant::now();
     input! {
@@ -242,7 +252,7 @@ fn main() {
         right2: [Bytes; d],
     }
     let mut rng = Mcg128Xsl64::new(9085);
-    let mut best_score = std::f64::MAX;
+    let mut best_score = 1e300;
     let mut best = (0, Vec::new(), Vec::new());
     let mut ok = 0;
     while start.elapsed() < Duration::from_millis(5800) {
@@ -260,19 +270,7 @@ fn main() {
     }
     let (n, g1, g2) = best;
     println!("{}", n);
-    for (i, &g) in g1.iter().enumerate() {
-        if i != 0 {
-            print!(" ");
-        }
-        print!("{}", if g == !0 { 0 } else { g });
-    }
-    println!();
-    for (i, &g) in g2.iter().enumerate() {
-        if i != 0 {
-            print!(" ");
-        }
-        print!("{}", if g == !0 { 0 } else { g });
-    }
-    println!();
+    print_ans(&g1);
+    print_ans(&g2);
     eprintln!("{} {}", ok, best_score);
 }
