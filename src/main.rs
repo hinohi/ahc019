@@ -5,7 +5,7 @@ use rand_pcg::Mcg128Xsl64;
 use std::time::{Duration, Instant};
 
 pub struct GridBox {
-    d: usize,
+    d: u8,
     grid: Grid3<u16>,
     front: GridFront<u8>,
     right: GridRight<u8>,
@@ -31,7 +31,7 @@ pub fn make_face(shadow: &[Vec<u8>]) -> Vec<u8> {
 }
 
 impl GridBox {
-    pub fn new(d: usize, front: &[Vec<u8>], right: &[Vec<u8>]) -> GridBox {
+    pub fn new(d: u8, front: &[Vec<u8>], right: &[Vec<u8>]) -> GridBox {
         let mut grid = Grid3::new(d, 0);
         let front = GridFront::from_vec(d, make_face(&front));
         let right = GridRight::from_vec(d, make_face(&right));
@@ -145,7 +145,7 @@ pub fn chose_next2(
 
 fn solve(
     rng: &mut Mcg128Xsl64,
-    d: usize,
+    d: u8,
     front1: &[Vec<u8>],
     right1: &[Vec<u8>],
     front2: &[Vec<u8>],
@@ -237,7 +237,7 @@ fn print_ans(v: &[u16]) {
 fn main() {
     let start = Instant::now();
     input! {
-        d: usize,
+        d: u8,
         front1: [Bytes; d],
         right1: [Bytes; d],
         front2: [Bytes; d],
