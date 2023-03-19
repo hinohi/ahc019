@@ -71,9 +71,13 @@ impl GridBox {
                     let p = Point::new(x, y, z);
                     match (self.front[p], self.right[p]) {
                         (Yet, Yet) => yet_yet.push(p),
-                        (Yet, Satisfied) | (Satisfied, Yet) => yet.push(p),
+                        (Yet, Satisfied) | (Satisfied, Yet) => {
+                            if yet_yet.is_empty() {
+                                yet.push(p)
+                            }
+                        }
                         (Satisfied, Satisfied) => {
-                            if self.grid[p] == 0 {
+                            if yet_yet.is_empty() && yet.is_empty() && self.grid[p] == 0 {
                                 can.push(p)
                             }
                         }
@@ -240,8 +244,10 @@ fn main() {
     let mut rng = Mcg128Xsl64::new(9085);
     let mut best_score = std::f64::MAX;
     let mut best = (0, Vec::new(), Vec::new());
+    let mut ok = 0;
     while start.elapsed() < Duration::from_millis(5800) {
         for _ in 0..10 {
+            ok += 1;
             if let Some((n, g1, g2, score)) =
                 solve(&mut rng, d, &front1, &right1, &front2, &right2, best_score)
             {
@@ -268,5 +274,5 @@ fn main() {
         print!("{}", if g == !0 { 0 } else { g });
     }
     println!();
-    eprintln!("{}", best_score);
+    eprintln!("{} {}", ok, best_score);
 }
