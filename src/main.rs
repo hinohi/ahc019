@@ -409,7 +409,7 @@ fn main() {
         front2: [Bytes; d],
         right2: [Bytes; d],
     }
-    let scheduler = McScheduler::new(1000, 10.0, 1e-4);
+    let scheduler = McScheduler::new(1000, 20.0, 1e-4);
     let mut rng = Mcg128Xsl64::new(9085);
     let mut best_score = 1e300;
     let mut best = (Vec::new(), Vec::new());
