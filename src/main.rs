@@ -1,4 +1,4 @@
-use ahc019::{Grid3, GridFront, GridRight, Point};
+use ahc019::{AxisMap, Grid3, GridFront, GridRight, Point};
 use proconio::{input, marker::Bytes};
 use rand::seq::SliceRandom;
 use rand_pcg::Mcg128Xsl64;
@@ -125,14 +125,20 @@ pub fn chose_next2(
     grid_2: &GridBox,
     p1: Point,
     p2: Point,
-    directions: &[u8],
-) -> Option<(Point, Point)> {
+    directions: [u8; 6],
+    axis_map: AxisMap,
+) -> Option<(Point, Point, AxisMap)> {
     let d = grid_1.d;
-    for &dir in directions.iter() {
-        if let Some(q1) = p1.next_cell(d, dir) {
-            if let Some(q2) = p2.next_cell(d, dir) {
-                if grid_1.grid[q1] == 0 && grid_2.grid[q2] == 0 {
-                    return Some((q1, q2));
+    for &dir1 in directions.iter() {
+        if let Some(q1) = p1.next_cell(d, dir1) {
+            if grid_1.grid[q1] != 0 {
+                continue;
+            }
+            for dir2 in axis_map.map_axis(dir1, &directions) {
+                if let Some(q2) = p2.next_cell(d, dir2) {
+                    if grid_2.grid[q2] == 0 {
+                        return Some((q1, q2, axis_map.fix(dir1, dir2)));
+                    }
                 }
             }
         }
@@ -187,14 +193,18 @@ fn solve(
         match (p1, p2) {
             (Some(mut p1), Some(mut p2)) => {
                 let mut c = 0;
+                let mut axis_map = AxisMap::new();
                 loop {
                     c += 1;
                     directions.shuffle(rng);
                     grid_1.put(p1, block_id);
                     grid_2.put(p2, block_id);
-                    if let Some((q1, q2)) = chose_next2(&grid_1, &grid_2, p1, p2, &directions) {
+                    if let Some((q1, q2, m)) =
+                        chose_next2(&grid_1, &grid_2, p1, p2, directions, axis_map)
+                    {
                         p1 = q1;
                         p2 = q2;
+                        axis_map = m;
                     } else {
                         break;
                     }
