@@ -69,16 +69,8 @@ impl Point {
 #[derive(Debug, Copy, Clone)]
 pub enum AxisMap {
     None,
-    Map1 {
-        from: u8,
-        to: u8,
-    },
-    Map2 {
-        from1: u8,
-        to1: u8,
-        from2: u8,
-        to2: u8,
-    },
+    Map1 { from: u8, to: u8 },
+    Map2 { map: [u8; 6] },
 }
 
 impl AxisMap {
@@ -90,61 +82,8 @@ impl AxisMap {
         match self {
             AxisMap::None => AxisMap::Map1 { from: d1, to: d2 },
             AxisMap::Map1 { from, to } if from == d1 => AxisMap::Map1 { from, to },
-            AxisMap::Map1 { from, to } => AxisMap::Map2 {
-                from1: from,
-                to1: to,
-                from2: d1,
-                to2: d2,
-            },
-            m => m,
-        }
-    }
-
-    pub fn map_axis(self, direction: u8, directions: &[u8]) -> Vec<u8> {
-        match self {
-            AxisMap::None => directions.to_vec(),
             AxisMap::Map1 { from, to } => {
-                assert_ne!(from, direction ^ 1);
-                if from == direction {
-                    return vec![to];
-                }
-                let map = match (from, to) {
-                    (from, to) if from == to => [0, 1, 2, 3, 4, 5],
-                    (0, 1) | (1, 0) => [1, 0, 2, 3, 5, 4],
-                    (0, 2) | (2, 0) => [2, 3, 0, 1, 5, 4],
-                    (0, 3) | (3, 0) => [3, 2, 1, 0, 5, 4],
-                    (0, 4) | (4, 0) => [4, 5, 3, 2, 0, 1],
-                    (0, 5) | (5, 0) => [5, 4, 3, 2, 1, 0],
-                    (1, 2) | (2, 1) => [3, 2, 1, 0, 5, 4],
-                    (1, 3) | (3, 1) => [2, 3, 0, 1, 5, 4],
-                    (1, 4) | (4, 1) => [5, 4, 3, 2, 1, 0],
-                    (1, 5) | (5, 1) => [4, 5, 3, 2, 0, 1],
-                    (2, 3) | (3, 2) => [0, 1, 3, 2, 5, 4],
-                    (2, 4) | (4, 2) => [1, 0, 4, 5, 2, 3],
-                    (2, 5) | (5, 2) => [1, 0, 5, 4, 3, 2],
-                    (3, 4) | (4, 3) => [1, 0, 5, 4, 3, 2],
-                    (3, 5) | (5, 3) => [1, 0, 4, 5, 2, 3],
-                    (4, 5) | (5, 4) => [0, 1, 3, 2, 5, 4],
-                    _ => unreachable!(),
-                };
-                directions
-                    .iter()
-                    .filter_map(|&d| {
-                        if d == from || d == from ^ 1 {
-                            None
-                        } else {
-                            Some(map[d as usize])
-                        }
-                    })
-                    .collect()
-            }
-            AxisMap::Map2 {
-                from1,
-                to1,
-                from2,
-                to2,
-            } => {
-                let map = match (from1, to1, from2, to2) {
+                let map = match (from, to, d1, d2) {
                     (from1, to1, from2, to2) if from1 == to1 && from2 == to2 => [0, 1, 2, 3, 4, 5],
                     (0, 0, 2, 3)
                     | (0, 0, 3, 2)
@@ -730,6 +669,51 @@ impl AxisMap {
                     | (5, 0, 3, 2) => [5, 4, 3, 2, 1, 0],
                     x => panic!("{:?}", x),
                 };
+                AxisMap::Map2 { map }
+            }
+            m => m,
+        }
+    }
+
+    pub fn map_axis(self, direction: u8, directions: &[u8]) -> Vec<u8> {
+        match self {
+            AxisMap::None => directions.to_vec(),
+            AxisMap::Map1 { from, to } => {
+                assert_ne!(from, direction ^ 1);
+                if from == direction {
+                    return vec![to];
+                }
+                let map = match (from, to) {
+                    (from, to) if from == to => [0, 1, 2, 3, 4, 5],
+                    (0, 1) | (1, 0) => [1, 0, 2, 3, 5, 4],
+                    (0, 2) | (2, 0) => [2, 3, 0, 1, 5, 4],
+                    (0, 3) | (3, 0) => [3, 2, 1, 0, 5, 4],
+                    (0, 4) | (4, 0) => [4, 5, 3, 2, 0, 1],
+                    (0, 5) | (5, 0) => [5, 4, 3, 2, 1, 0],
+                    (1, 2) | (2, 1) => [3, 2, 1, 0, 5, 4],
+                    (1, 3) | (3, 1) => [2, 3, 0, 1, 5, 4],
+                    (1, 4) | (4, 1) => [5, 4, 3, 2, 1, 0],
+                    (1, 5) | (5, 1) => [4, 5, 3, 2, 0, 1],
+                    (2, 3) | (3, 2) => [0, 1, 3, 2, 5, 4],
+                    (2, 4) | (4, 2) => [1, 0, 4, 5, 2, 3],
+                    (2, 5) | (5, 2) => [1, 0, 5, 4, 3, 2],
+                    (3, 4) | (4, 3) => [1, 0, 5, 4, 3, 2],
+                    (3, 5) | (5, 3) => [1, 0, 4, 5, 2, 3],
+                    (4, 5) | (5, 4) => [0, 1, 3, 2, 5, 4],
+                    _ => unreachable!(),
+                };
+                directions
+                    .iter()
+                    .filter_map(|&d| {
+                        if d == from || d == from ^ 1 {
+                            None
+                        } else {
+                            Some(map[d as usize])
+                        }
+                    })
+                    .collect()
+            }
+            AxisMap::Map2 { map } => {
                 vec![map[direction as usize]]
             }
         }
