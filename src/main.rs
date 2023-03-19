@@ -2,6 +2,7 @@ use ahc019::{AxisMap, Grid3, GridFront, GridRight, Point};
 use proconio::{input, marker::Bytes};
 use rand::seq::SliceRandom;
 use rand_pcg::Mcg128Xsl64;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum FaceState {
@@ -153,6 +154,7 @@ fn solve(
     right1: &[Vec<u8>],
     front2: &[Vec<u8>],
     right2: &[Vec<u8>],
+    current_best: f64,
 ) -> Option<(u16, Vec<u16>, Vec<u16>, f64)> {
     fn single_update_loop(
         rng: &mut Mcg128Xsl64,
@@ -182,6 +184,9 @@ fn solve(
     let mut score = 0.0;
 
     loop {
+        if score >= current_best {
+            return None;
+        }
         let yet1 = grid_1.make_can_put_points();
         let yet2 = grid_2.make_can_put_points();
         if yet1.satisfied() && yet2.satisfied() {
@@ -224,6 +229,7 @@ fn solve(
 }
 
 fn main() {
+    let start = Instant::now();
     input! {
         d: usize,
         front1: [Bytes; d],
@@ -234,11 +240,15 @@ fn main() {
     let mut rng = Mcg128Xsl64::new(9085);
     let mut best_score = std::f64::MAX;
     let mut best = (0, Vec::new(), Vec::new());
-    for _ in 0..1000 {
-        if let Some((n, g1, g2, score)) = solve(&mut rng, d, &front1, &right1, &front2, &right2) {
-            if score < best_score {
-                best_score = score;
-                best = (n, g1, g2);
+    while start.elapsed() < Duration::from_millis(5800) {
+        for _ in 0..10 {
+            if let Some((n, g1, g2, score)) =
+                solve(&mut rng, d, &front1, &right1, &front2, &right2, best_score)
+            {
+                if score < best_score {
+                    best_score = score;
+                    best = (n, g1, g2);
+                }
             }
         }
     }
