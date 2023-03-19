@@ -4,18 +4,11 @@ use rand::seq::SliceRandom;
 use rand_pcg::Mcg128Xsl64;
 use std::time::{Duration, Instant};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum FaceState {
-    Null,
-    Yet,
-    Satisfied,
-}
-
 pub struct GridBox {
     d: usize,
     grid: Grid3<u16>,
-    front: GridFront<FaceState>,
-    right: GridRight<FaceState>,
+    front: GridFront<u8>,
+    right: GridRight<u8>,
 }
 
 pub struct YetPointSet {
@@ -24,13 +17,13 @@ pub struct YetPointSet {
     can: Vec<Point>,
 }
 
-pub fn make_face(shadow: &[Vec<u8>]) -> Vec<FaceState> {
+pub fn make_face(shadow: &[Vec<u8>]) -> Vec<u8> {
     let d = shadow.len();
-    let mut v = vec![FaceState::Null; d * d];
+    let mut v = vec![!0; d * d];
     for (i, row) in shadow.iter().enumerate() {
         for (j, &f) in row.iter().enumerate() {
             if f == b'1' {
-                v[j * d + i] = FaceState::Yet;
+                v[j * d + i] = 0;
             }
         }
     }
@@ -46,7 +39,7 @@ impl GridBox {
             for y in 0..d {
                 for z in 0..d {
                     let p = Point::new(x, y, z);
-                    if front[p] == FaceState::Null || right[p] == FaceState::Null {
+                    if front[p] == !0 || right[p] == !0 {
                         grid[p] = !0;
                     }
                 }
@@ -61,7 +54,6 @@ impl GridBox {
     }
 
     pub fn make_can_put_points(&self) -> YetPointSet {
-        use FaceState::*;
         let mut yet_yet = Vec::new();
         let mut yet = Vec::new();
         let mut can = Vec::new();
@@ -70,13 +62,13 @@ impl GridBox {
                 for z in 0..self.d {
                     let p = Point::new(x, y, z);
                     match (self.front[p], self.right[p]) {
-                        (Yet, Yet) => yet_yet.push(p),
-                        (Yet, Satisfied) | (Satisfied, Yet) => {
+                        (0, 0) => yet_yet.push(p),
+                        (0, x) | (x, 0) if x != !0 => {
                             if yet_yet.is_empty() {
                                 yet.push(p)
                             }
                         }
-                        (Satisfied, Satisfied) => {
+                        (x, y) if x != !0 && y != !0 => {
                             if yet_yet.is_empty() && yet.is_empty() && self.grid[p] == 0 {
                                 can.push(p)
                             }
@@ -91,8 +83,8 @@ impl GridBox {
 
     pub fn put(&mut self, p: Point, block_id: u16) {
         self.grid[p] = block_id;
-        self.front[p] = FaceState::Satisfied;
-        self.right[p] = FaceState::Satisfied;
+        self.front[p] += 1;
+        self.right[p] += 1;
     }
 }
 
