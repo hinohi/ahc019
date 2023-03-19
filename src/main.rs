@@ -1,4 +1,4 @@
-use ahc019::{AxisMap, Grid3, GridFront, GridRight, Point};
+use ahc019::{AxisMap, Grid3, GridFront, GridRight, McScheduler, Point};
 use proconio::{input, marker::Bytes};
 use rand::seq::SliceRandom;
 use rand::Rng;
@@ -22,6 +22,7 @@ pub struct YetPointSet {
     can: Vec<Point>,
 }
 
+#[derive(Clone)]
 pub struct Block {
     shared: Vec<(u16, Vec<Point>, Vec<Point>)>,
     shared_id_stock: Vec<u16>,
@@ -139,6 +140,14 @@ impl Block {
         }
     }
 
+    pub fn shared_only_score(&self) -> f64 {
+        let mut score = 0.0;
+        for (_, v, _) in self.shared.iter() {
+            score += 1.0 / v.len() as f64;
+        }
+        score
+    }
+
     pub fn gen_shared_block_id(&mut self) -> u16 {
         if let Some(id) = self.shared_id_stock.pop() {
             id
@@ -157,11 +166,24 @@ impl Block {
         self.shared.push((block_id, p1, p2));
     }
 
-    pub fn pop(&mut self, rng: &mut Mcg128Xsl64) -> (Vec<Point>, Vec<Point>) {
-        let i = rng.gen_range(0, self.shared.len());
+    fn pop_shared(&mut self, i: usize) -> (Vec<Point>, Vec<Point>) {
         let (id, s1, s2) = self.shared.swap_remove(i);
         self.shared_id_stock.push(id);
         (s1, s2)
+    }
+
+    pub fn pop_random(&mut self, rng: &mut Mcg128Xsl64) -> (Vec<Point>, Vec<Point>) {
+        let i = rng.gen_range(0, self.shared.len());
+        self.pop_shared(i)
+    }
+
+    pub fn pop_small(&mut self, th: usize) -> Option<(Vec<Point>, Vec<Point>)> {
+        for i in 0..self.shared.len() {
+            if self.shared[i].1.len() <= th {
+                return Some(self.pop_shared(i));
+            }
+        }
+        None
     }
 
     pub fn push_half(&mut self, place: u8, p: Point) {
@@ -306,13 +328,66 @@ fn solve(
     right1: &[Vec<u8>],
     front2: &[Vec<u8>],
     right2: &[Vec<u8>],
-    current_best: f64,
-) -> Option<(Vec<u16>, Vec<u16>, f64)> {
+    scheduler: McScheduler,
+) -> (Vec<u16>, Vec<u16>, f64) {
     let mut grid_1 = GridBox::new(d, &front1, right1);
     let mut grid_2 = GridBox::new(d, &front2, right2);
     let mut block = Block::new();
-    let score = fill_all(rng, &mut grid_1, &mut grid_2, &mut block, current_best);
-    score.and_then(|score| Some((grid_1.grid.data, grid_2.grid.data, score)))
+    let mut best = loop {
+        if let Some(score) = fill_all(rng, &mut grid_1, &mut grid_2, &mut block, 1e100) {
+            break (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
+        }
+        grid_1 = GridBox::new(d, &front1, right1);
+        grid_2 = GridBox::new(d, &front2, right2);
+        block = Block::new();
+    };
+    let mut score = best.2;
+    for step in 0..scheduler.max_step {
+        let temperature = scheduler.temperature(step);
+
+        let before_state = (grid_1.clone(), grid_2.clone(), block.clone());
+
+        for &p in block.half1.iter() {
+            grid_1.remove(p);
+        }
+        for &p in block.half2.iter() {
+            grid_2.remove(p);
+        }
+        block.half_reset();
+        while let Some((p1, p2)) = block.pop_small(2) {
+            for p in p1 {
+                grid_1.remove(p);
+            }
+            for p in p2 {
+                grid_2.remove(p);
+            }
+        }
+        if !block.shared.is_empty() {
+            let (p1, p2) = block.pop_random(rng);
+            for p in p1 {
+                grid_1.remove(p);
+            }
+            for p in p2 {
+                grid_2.remove(p);
+            }
+        }
+
+        let sos = block.shared_only_score();
+        let cut_off = temperature * 10.0 - sos + score;
+        let new_score =
+            sos + fill_all(rng, &mut grid_1, &mut grid_2, &mut block, cut_off).unwrap_or(1e100);
+        if new_score > score || !rng.gen_bool(((new_score - score) / temperature).exp()) {
+            grid_1 = before_state.0;
+            grid_2 = before_state.1;
+            block = before_state.2;
+        } else {
+            score = new_score;
+            if score < best.2 {
+                best = (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
+            }
+        }
+    }
+    best
 }
 
 fn print_ans(v: &[u16], block_id_map: &HashMap<u16, usize>) {
@@ -334,21 +409,17 @@ fn main() {
         front2: [Bytes; d],
         right2: [Bytes; d],
     }
+    let scheduler = McScheduler::new(1000, 10.0, 1e-4);
     let mut rng = Mcg128Xsl64::new(9085);
     let mut best_score = 1e300;
     let mut best = (Vec::new(), Vec::new());
-    let mut ok = 0;
+    let mut mc_run = 0;
     while start.elapsed() < Duration::from_millis(5800) {
-        for _ in 0..10 {
-            ok += 1;
-            if let Some((g1, g2, score)) =
-                solve(&mut rng, d, &front1, &right1, &front2, &right2, best_score)
-            {
-                if score < best_score {
-                    best_score = score;
-                    best = (g1, g2);
-                }
-            }
+        mc_run += 1;
+        let (g1, g2, score) = solve(&mut rng, d, &front1, &right1, &front2, &right2, scheduler);
+        if score < best_score {
+            best_score = score;
+            best = (g1, g2);
         }
     }
     let (g1, g2) = best;
@@ -363,5 +434,5 @@ fn main() {
     println!("{}", block_id_map.len());
     print_ans(&g1, &block_id_map);
     print_ans(&g2, &block_id_map);
-    eprintln!("{} {}", ok, best_score);
+    eprintln!("{} {}", mc_run, best_score);
 }
