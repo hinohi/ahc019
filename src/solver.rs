@@ -373,7 +373,7 @@ pub fn solve(
         }
 
         let sos = block.shared_only_score();
-        let cut_off = temperature * 10.0 - sos + score;
+        let cut_off = temperature * 3.0 - sos + score;
         let new_score =
             sos + fill_all(rng, &mut grid_1, &mut grid_2, &mut block, cut_off).unwrap_or(1e100);
         if new_score > score || !rng.gen_bool(((new_score - score) / temperature).exp()) {
