@@ -780,7 +780,12 @@ impl<T> GridRight<T> {
 
     fn at(&self, p: Point) -> usize {
         let Point(_, y, z) = p;
-        (y * self.d + z) as usize
+        (z * self.d + y) as usize
+    }
+
+    pub fn row(&self, z: usize) -> &[T] {
+        let d = self.d as usize;
+        &self.data[z * d..(z + 1) * d]
     }
 }
 

@@ -26,13 +26,17 @@ pub struct Block {
     next_half_id: u16,
 }
 
-pub fn make_face(shadow: &[Vec<u8>]) -> Vec<u8> {
+pub fn make_face(shadow: &[Vec<u8>], t: bool) -> Vec<u8> {
     let d = shadow.len();
     let mut v = vec![!0; d * d];
     for (i, row) in shadow.iter().enumerate() {
         for (j, &f) in row.iter().enumerate() {
             if f == b'1' {
-                v[j * d + i] = 0;
+                if t {
+                    v[i * d + j] = 0;
+                } else {
+                    v[j * d + i] = 0;
+                }
             }
         }
     }
@@ -42,8 +46,8 @@ pub fn make_face(shadow: &[Vec<u8>]) -> Vec<u8> {
 impl GridBox {
     pub fn new(d: u8, front: &[Vec<u8>], right: &[Vec<u8>]) -> GridBox {
         let mut grid = Grid3::new(d, 0);
-        let front = GridFront::from_vec(d, make_face(&front));
-        let right = GridRight::from_vec(d, make_face(&right));
+        let front = GridFront::from_vec(d, make_face(&front, false));
+        let right = GridRight::from_vec(d, make_face(&right, true));
         for x in 0..d {
             for y in 0..d {
                 for z in 0..d {
@@ -67,22 +71,28 @@ impl GridBox {
         let mut yet = Vec::new();
         let mut can = Vec::new();
         for x in 0..self.d {
-            for y in 0..self.d {
-                for z in 0..self.d {
-                    let p = Point::new(x, y, z);
-                    match (self.front[p], self.right[p]) {
+            for z in 0..self.d {
+                let front = self.front.data[(x * self.d + z) as usize];
+                if front == !0 {
+                    continue;
+                }
+                for (y, &right) in self.right.row(z as usize).iter().enumerate() {
+                    if right == !0 {
+                        continue;
+                    }
+                    let p = Point::new(x, y as u8, z);
+                    match (front, right) {
                         (0, 0) => yet_yet.push(p),
-                        (0, x) | (x, 0) if x != !0 => {
+                        (0, _) | (_, 0) => {
                             if yet_yet.is_empty() {
-                                yet.push(p)
+                                yet.push(p);
                             }
                         }
-                        (x, y) if x != !0 && y != !0 => {
+                        _ => {
                             if yet_yet.is_empty() && yet.is_empty() && self.grid[p] == 0 {
-                                can.push(p)
+                                can.push(p);
                             }
                         }
-                        _ => (),
                     }
                 }
             }
