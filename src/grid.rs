@@ -81,7 +81,9 @@ impl AxisMap {
     pub fn fix(self, d1: u8, d2: u8) -> AxisMap {
         match self {
             AxisMap::None => AxisMap::Map1 { from: d1, to: d2 },
-            AxisMap::Map1 { from, to } if from == d1 => AxisMap::Map1 { from, to },
+            AxisMap::Map1 { from, to } if from == d1 || from == d1 ^ 1 => {
+                AxisMap::Map1 { from, to }
+            }
             AxisMap::Map1 { from, to } => {
                 let map = match (from, to, d1, d2) {
                     (from1, to1, from2, to2) if from1 == to1 && from2 == to2 => [0, 1, 2, 3, 4, 5],
@@ -679,8 +681,7 @@ impl AxisMap {
         match self {
             AxisMap::None => directions.to_vec(),
             AxisMap::Map1 { from, to } => {
-                assert_ne!(from, direction ^ 1);
-                if from == direction {
+                if from == direction || from == direction ^ 1 {
                     return vec![to];
                 }
                 let map = match (from, to) {

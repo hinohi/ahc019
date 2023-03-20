@@ -212,30 +212,48 @@ pub fn chose_next1(grid: &GridBox, p: Point, directions: &[u8]) -> Option<Point>
     None
 }
 
-pub fn chose_next2(
-    grid_1: &GridBox,
-    grid_2: &GridBox,
+fn grow_shared_block(
+    rng: &mut Mcg128Xsl64,
+    grid_1: &mut GridBox,
+    grid_2: &mut GridBox,
+    block_id: u16,
     p1: Point,
     p2: Point,
-    directions: [u8; 6],
-    axis_map: AxisMap,
-) -> Option<(Point, Point, AxisMap)> {
+) -> (Vec<Point>, Vec<Point>) {
     let d = grid_1.d;
-    for &dir1 in directions.iter() {
-        if let Some(q1) = p1.next_cell(d, dir1) {
-            if grid_1.grid[q1] != 0 {
-                continue;
-            }
-            for dir2 in axis_map.map_axis(dir1, &directions) {
-                if let Some(q2) = p2.next_cell(d, dir2) {
-                    if grid_2.grid[q2] == 0 {
-                        return Some((q1, q2, axis_map.fix(dir1, dir2)));
+    let mut directions = [0, 1, 2, 3, 4, 5];
+    directions.shuffle(rng);
+    let mut axis_map = AxisMap::new();
+    let mut pp1 = Vec::new();
+    let mut pp2 = Vec::new();
+    let mut stack = vec![(p1, p2)];
+    grid_1.put(p1, block_id);
+    grid_2.put(p2, block_id);
+    pp1.push(p1);
+    pp2.push(p2);
+    while let Some((p1, p2)) = stack.pop() {
+        for &dir1 in directions.iter() {
+            if let Some(p1) = p1.next_cell(d, dir1) {
+                if grid_1.grid[p1] != 0 {
+                    continue;
+                }
+                for dir2 in axis_map.map_axis(dir1, &directions) {
+                    if let Some(p2) = p2.next_cell(d, dir2) {
+                        if grid_2.grid[p2] == 0 {
+                            grid_1.put(p1, block_id);
+                            grid_2.put(p2, block_id);
+                            pp1.push(p1);
+                            pp2.push(p2);
+                            axis_map = axis_map.fix(dir1, dir2);
+                            stack.push((p1, p2));
+                            break;
+                        }
                     }
                 }
             }
         }
     }
-    None
+    (pp1, pp2)
 }
 
 fn fill_all(
@@ -283,30 +301,10 @@ fn fill_all(
         let p1 = yet1.chose(rng);
         let p2 = yet2.chose(rng);
         match (p1, p2) {
-            (Some(mut p1), Some(mut p2)) => {
+            (Some(p1), Some(p2)) => {
                 let block_id = block.gen_shared_block_id();
-                let mut c = 0;
-                let mut axis_map = AxisMap::new();
-                let mut pp1 = Vec::new();
-                let mut pp2 = Vec::new();
-                loop {
-                    c += 1;
-                    directions.shuffle(rng);
-                    grid_1.put(p1, block_id);
-                    grid_2.put(p2, block_id);
-                    pp1.push(p1);
-                    pp2.push(p2);
-                    if let Some((q1, q2, m)) =
-                        chose_next2(&grid_1, &grid_2, p1, p2, directions, axis_map)
-                    {
-                        p1 = q1;
-                        p2 = q2;
-                        axis_map = m;
-                    } else {
-                        break;
-                    }
-                }
-                score += 1.0 / c as f64;
+                let (pp1, pp2) = grow_shared_block(rng, grid_1, grid_2, block_id, p1, p2);
+                score += 1.0 / pp1.len() as f64;
                 block.push_shared(block_id, pp1, pp2);
             }
             (Some(p), None) => {
@@ -414,7 +412,7 @@ fn main() {
     let mut best_score = 1e300;
     let mut best = (Vec::new(), Vec::new());
     let mut mc_run = 0;
-    while start.elapsed() < Duration::from_millis(5800) {
+    while start.elapsed() < Duration::from_millis(5500) {
         mc_run += 1;
         let (g1, g2, score) = solve(&mut rng, d, &front1, &right1, &front2, &right2, scheduler);
         if score < best_score {
