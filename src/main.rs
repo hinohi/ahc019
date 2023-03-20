@@ -263,31 +263,28 @@ fn fill_all(
     block: &mut Block,
     cut_off: f64,
 ) -> Option<f64> {
-    fn single_update_loop(
-        rng: &mut Mcg128Xsl64,
-        directions: &mut [u8],
-        grid: &mut GridBox,
-        mut p: Point,
-        block: &mut Block,
-        place: u8,
-    ) -> f64 {
+    fn single_update_loop(grid: &mut GridBox, p: Point, block: &mut Block, place: u8) -> f64 {
         let block_id = block.gen_half_block_id();
         let mut c = 0;
-        loop {
-            c += 1;
-            directions.shuffle(rng);
-            grid.put(p, block_id);
-            block.push_half(place, p);
-            if let Some(q) = chose_next1(&grid, p, &directions) {
-                p = q;
-            } else {
-                break;
+        let mut stack = vec![p];
+        grid.put(p, block_id);
+        block.push_half(place, p);
+        c += 1;
+        while let Some(p) = stack.pop() {
+            for dir in 0..6 {
+                if let Some(p) = p.next_cell(grid.d, dir) {
+                    if grid.grid[p] == 0 {
+                        grid.put(p, block_id);
+                        block.push_half(place, p);
+                        c += 1;
+                        stack.push(p);
+                    }
+                }
             }
         }
         1.0 / c as f64 + c as f64
     }
 
-    let mut directions = [0, 1, 2, 3, 4, 5];
     let mut score = 0.0;
     loop {
         if score >= cut_off {
@@ -308,10 +305,10 @@ fn fill_all(
                 block.push_shared(block_id, pp1, pp2);
             }
             (Some(p), None) => {
-                score += single_update_loop(rng, &mut directions, grid_1, p, block, 1);
+                score += single_update_loop(grid_1, p, block, 1);
             }
             (None, Some(p)) => {
-                score += single_update_loop(rng, &mut directions, grid_2, p, block, 2);
+                score += single_update_loop(grid_2, p, block, 2);
             }
             (None, None) => return None,
         }
