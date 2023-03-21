@@ -1,4 +1,4 @@
-use ahc019::{mc_solve, McScheduler};
+use ahc019::{mc_solve, McParams};
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use rand_pcg::Mcg128Xsl64;
 use serde::{Deserialize, Serialize};
@@ -42,7 +42,7 @@ async fn func(event: LambdaEvent<Request>) -> Result<Response, Error> {
     let front2 = face_conv(&input.f[1]);
     let right2 = face_conv(&input.r[1]);
     let mut rng = Mcg128Xsl64::new(32343);
-    let scheduler = McScheduler::new(
+    let scheduler = McParams::new(
         event.payload.max_step,
         event.payload.max_temperature,
         event.payload.min_temperature,

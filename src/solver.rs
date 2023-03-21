@@ -1,4 +1,4 @@
-use crate::{AxisMap, Grid3, GridFront, GridRight, McScheduler, Point};
+use crate::{AxisMap, Grid3, GridFront, GridRight, McParams, Point};
 use rand::seq::SliceRandom;
 use rand::Rng;
 use rand_pcg::Mcg128Xsl64;
@@ -338,7 +338,7 @@ pub fn mc_run(
     right1: &[Vec<u8>],
     front2: &[Vec<u8>],
     right2: &[Vec<u8>],
-    scheduler: McScheduler,
+    params: McParams,
 ) -> (Vec<u16>, Vec<u16>, f64) {
     let mut grid_1 = GridBox::new(d, &front1, right1);
     let mut grid_2 = GridBox::new(d, &front2, right2);
@@ -362,8 +362,8 @@ pub fn mc_run(
         block = Block::new();
     };
     let mut score = best.2;
-    for step in 0..scheduler.max_step {
-        let temperature = scheduler.temperature(step);
+    for step in 0..params.max_step {
+        let temperature = params.temperature(step);
 
         let before_state = (grid_1.clone(), grid_2.clone(), block.clone());
 
@@ -374,12 +374,14 @@ pub fn mc_run(
             grid_2.remove(p);
         }
         block.half_reset();
-        while let Some((p1, p2)) = block.pop_small(2) {
-            for p in p1 {
-                grid_1.remove(p);
-            }
-            for p in p2 {
-                grid_2.remove(p);
+        if params.erase_small_th > 0 {
+            while let Some((p1, p2)) = block.pop_small(params.erase_small_th) {
+                for p in p1 {
+                    grid_1.remove(p);
+                }
+                for p in p2 {
+                    grid_2.remove(p);
+                }
             }
         }
         if !block.shared.is_empty() {
@@ -393,7 +395,7 @@ pub fn mc_run(
         }
 
         let sos = block.shared_only_score();
-        let cut_off = temperature * 3.0 - sos + score;
+        let cut_off = temperature * params.cut_off - sos + score;
         let new_score = sos
             + fill_all(
                 rng,
@@ -458,16 +460,16 @@ pub fn mc_solve(
     right1: &[Vec<u8>],
     front2: &[Vec<u8>],
     right2: &[Vec<u8>],
-    scheduler: McScheduler,
+    params: McParams,
 ) -> SolveResult {
     let mut best = SolveResult::worst();
     let t1 = Instant::now();
-    let (g1, g2, score) = mc_run(rng, d, &front1, &right1, &front2, &right2, scheduler);
+    let (g1, g2, score) = mc_run(rng, d, &front1, &right1, &front2, &right2, params);
     let step_duration = t1.elapsed();
     best.set_best(g1, g2, score);
 
     while start.elapsed() + step_duration < limit {
-        let (g1, g2, score) = mc_run(rng, d, &front1, &right1, &front2, &right2, scheduler);
+        let (g1, g2, score) = mc_run(rng, d, &front1, &right1, &front2, &right2, params);
         best.set_best(g1, g2, score);
     }
     best

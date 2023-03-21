@@ -1,4 +1,4 @@
-use ahc019::{mc_solve, McScheduler};
+use ahc019::{mc_solve, McParams};
 use proconio::{input, marker::Bytes};
 use rand_pcg::Mcg128Xsl64;
 use std::{
@@ -39,13 +39,13 @@ fn main() {
         front2: [Bytes; d],
         right2: [Bytes; d],
     }
-    // if d == 5 {
-    //     let result = brute_force::solve(d, &front1, &right1, &front2, &right2);
-    //     eprintln!("{}", result.score);
-    //     print_ans(&result.g1, &result.g2);
-    //     return;
-    // }
-    let scheduler = McScheduler::new(1000, 20.0, 1e-4);
+    let params = McParams {
+        max_step: 1000,
+        max_temperature: 20.0,
+        min_temperature: 1e-4,
+        erase_small_th: 2,
+        cut_off: 3.0,
+    };
     let mut rng = Mcg128Xsl64::new(9085);
     let result = mc_solve(
         start,
@@ -56,7 +56,7 @@ fn main() {
         &right1,
         &front2,
         &right2,
-        scheduler,
+        params,
     );
     eprintln!("{} {}", result.run_count, result.score);
     print_ans(&result.g1, &result.g2);

@@ -1,4 +1,4 @@
-use ahc019::{mc_run, McScheduler};
+use ahc019::{mc_run, McParams};
 use proconio::{input, marker::Bytes, source::auto::AutoSource};
 use rand_pcg::Mcg128Xsl64;
 
@@ -27,7 +27,7 @@ fn main() {
             front2: [Bytes; d],
             right2: [Bytes; d],
         }
-        let scheduler = McScheduler::new(1000, 20.0, 1e-4);
+        let scheduler = McParams::new(1000, 20.0, 1e-4);
         let (g1, g2, score) = mc_run(&mut rng, d, &front1, &right1, &front2, &right2, scheduler);
         assert!(g1.len() < 10000);
         assert!(g2.len() < 10000);
