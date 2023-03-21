@@ -67,32 +67,50 @@ impl GridBox {
         }
     }
 
-    pub fn make_yet_points(&self) -> YetPointSet {
-        let mut yet_yet = Vec::new();
-        let mut yet = Vec::new();
-        let mut can = Vec::new();
+    pub fn make_hole_xzy(&self) -> Vec<(u8, u8, Vec<u8>)> {
+        let mut v = Vec::new();
         for x in 0..self.d {
             for z in 0..self.d {
                 let front = self.front.data[(x * self.d + z) as usize];
                 if front == !0 {
                     continue;
                 }
-                for (y, &right) in self.right.row(z as usize).iter().enumerate() {
-                    if right == !0 {
-                        continue;
-                    }
-                    let p = Point::new(x, y as u8, z);
-                    match (front, right) {
-                        (0, 0) => yet_yet.push(p),
-                        (0, _) | (_, 0) => {
-                            if yet_yet.is_empty() {
-                                yet.push(p);
-                            }
+                v.push((
+                    x,
+                    z,
+                    self.right
+                        .row(z as usize)
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(y, &right)| if right != !0 { Some(y as u8) } else { None })
+                        .collect(),
+                ));
+            }
+        }
+        v
+    }
+
+    pub fn make_yet_points(&self, hole: &[(u8, u8, Vec<u8>)]) -> YetPointSet {
+        let mut yet_yet = Vec::new();
+        let mut yet = Vec::new();
+        let mut can = Vec::new();
+        for (x, z, yy) in hole.iter() {
+            let x = *x;
+            let z = *z;
+            let front = self.front.data[(x * self.d + z) as usize];
+            for &y in yy.iter() {
+                let right = self.right.data[(z * self.d + y) as usize];
+                let p = Point::new(x, y, z);
+                match (front, right) {
+                    (0, 0) => yet_yet.push(p),
+                    (0, _) | (_, 0) => {
+                        if yet_yet.is_empty() {
+                            yet.push(p);
                         }
-                        _ => {
-                            if yet_yet.is_empty() && yet.is_empty() && self.grid[p] == 0 {
-                                can.push(p);
-                            }
+                    }
+                    _ => {
+                        if yet_yet.is_empty() && yet.is_empty() && self.grid[p] == 0 {
+                            can.push(p);
                         }
                     }
                 }
@@ -264,6 +282,8 @@ fn grow_shared_block(
 
 fn fill_all(
     rng: &mut Mcg128Xsl64,
+    hole_1: &[(u8, u8, Vec<u8>)],
+    hole_2: &[(u8, u8, Vec<u8>)],
     grid_1: &mut GridBox,
     grid_2: &mut GridBox,
     block: &mut Block,
@@ -296,8 +316,8 @@ fn fill_all(
         if score >= cut_off {
             return None;
         }
-        let yet1 = grid_1.make_yet_points();
-        let yet2 = grid_2.make_yet_points();
+        let yet1 = grid_1.make_yet_points(hole_1);
+        let yet2 = grid_2.make_yet_points(hole_2);
         if yet1.satisfied() && yet2.satisfied() {
             break;
         }
@@ -333,9 +353,19 @@ pub fn mc_run(
 ) -> (Vec<u16>, Vec<u16>, f64) {
     let mut grid_1 = GridBox::new(d, &front1, right1);
     let mut grid_2 = GridBox::new(d, &front2, right2);
+    let hole_1 = grid_1.make_hole_xzy();
+    let hole_2 = grid_2.make_hole_xzy();
     let mut block = Block::new();
     let mut best = loop {
-        if let Some(score) = fill_all(rng, &mut grid_1, &mut grid_2, &mut block, 1e100) {
+        if let Some(score) = fill_all(
+            rng,
+            &hole_1,
+            &hole_2,
+            &mut grid_1,
+            &mut grid_2,
+            &mut block,
+            1e100,
+        ) {
             break (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
         }
         grid_1 = GridBox::new(d, &front1, right1);
@@ -375,8 +405,17 @@ pub fn mc_run(
 
         let sos = block.shared_only_score();
         let cut_off = temperature * 3.0 - sos + score;
-        let new_score =
-            sos + fill_all(rng, &mut grid_1, &mut grid_2, &mut block, cut_off).unwrap_or(1e100);
+        let new_score = sos
+            + fill_all(
+                rng,
+                &hole_1,
+                &hole_2,
+                &mut grid_1,
+                &mut grid_2,
+                &mut block,
+                cut_off,
+            )
+            .unwrap_or(1e100);
         if new_score > score || !rng.gen_bool(((new_score - score) / temperature).exp()) {
             grid_1 = before_state.0;
             grid_2 = before_state.1;
