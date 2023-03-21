@@ -461,7 +461,12 @@ pub fn mc_solve(
     scheduler: McScheduler,
 ) -> SolveResult {
     let mut best = SolveResult::worst();
-    while start.elapsed() < limit {
+    let t1 = Instant::now();
+    let (g1, g2, score) = mc_run(rng, d, &front1, &right1, &front2, &right2, scheduler);
+    let step_duration = t1.elapsed();
+    best.set_best(g1, g2, score);
+
+    while start.elapsed() + step_duration < limit {
         let (g1, g2, score) = mc_run(rng, d, &front1, &right1, &front2, &right2, scheduler);
         best.set_best(g1, g2, score);
     }

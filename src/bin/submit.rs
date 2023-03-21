@@ -29,7 +29,7 @@ fn main() {
     let mut rng = Mcg128Xsl64::new(9085);
     let result = mc_solve(
         start,
-        Duration::from_millis(5500),
+        Duration::from_millis(5800),
         &mut rng,
         d,
         &front1,
