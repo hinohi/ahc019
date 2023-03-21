@@ -27,8 +27,14 @@ fn main() {
             front2: [Bytes; d],
             right2: [Bytes; d],
         }
-        let scheduler = McParams::new(1000, 20.0, 1e-4);
-        let (g1, g2, score) = mc_run(&mut rng, d, &front1, &right1, &front2, &right2, scheduler);
+        let params = McParams {
+            max_step: 1000,
+            max_temperature: 20.0,
+            min_temperature: 1e-4,
+            erase_small_th: 2,
+            cut_off: 3.0,
+        };
+        let (g1, g2, score) = mc_run(&mut rng, d, &front1, &right1, &front2, &right2, params);
         assert!(g1.len() < 10000);
         assert!(g2.len() < 10000);
         assert!(score > 0.0);

@@ -11,6 +11,8 @@ struct Request {
     max_step: u32,
     max_temperature: f64,
     min_temperature: f64,
+    erase_small_th: usize,
+    cut_off: f64,
 }
 
 #[derive(Serialize)]
@@ -42,11 +44,13 @@ async fn func(event: LambdaEvent<Request>) -> Result<Response, Error> {
     let front2 = face_conv(&input.f[1]);
     let right2 = face_conv(&input.r[1]);
     let mut rng = Mcg128Xsl64::new(32343);
-    let scheduler = McParams::new(
-        event.payload.max_step,
-        event.payload.max_temperature,
-        event.payload.min_temperature,
-    );
+    let scheduler = McParams {
+        max_step: event.payload.max_step,
+        max_temperature: event.payload.max_temperature,
+        min_temperature: event.payload.min_temperature,
+        erase_small_th: event.payload.erase_small_th,
+        cut_off: event.payload.cut_off,
+    };
     let best = mc_solve(
         start,
         Duration::from_millis(5800),
