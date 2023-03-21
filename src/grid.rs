@@ -66,7 +66,7 @@ impl Point {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum AxisMap {
     None,
     Map1 { from: u8, to: u8 },
