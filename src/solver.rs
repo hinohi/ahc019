@@ -225,17 +225,6 @@ impl Block {
     }
 }
 
-pub fn chose_next1(grid: &GridBox, p: Point, directions: &[u8]) -> Option<Point> {
-    for &dir in directions.iter() {
-        if let Some(q) = p.next_cell(grid.d, dir) {
-            if grid.grid[q] == 0 {
-                return Some(q);
-            }
-        }
-    }
-    None
-}
-
 fn grow_shared_block(
     rng: &mut Mcg128Xsl64,
     grid_1: &mut GridBox,
