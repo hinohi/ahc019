@@ -68,13 +68,16 @@ def summary_score(name: str, outputs: list[dict]):
 
     s = 0.0
     log_s = 0.0
+    c = 0
     for o in outputs:
         score = o['score']
         s += score
         log_s += math.log(score)
+        c += o['run_count']
     s /= n
     log_s /= n
-    print(f'{d} {n} {s} {log_s}')
+    c /= n
+    print(f'{d} {n} {c} {s} {log_s}')
 
 
 if __name__ == '__main__':
