@@ -18,6 +18,8 @@ def main():
     p.add_argument('--max-step', '-S', type=int, required=True)
     p.add_argument('--max-temperature', '-T', type=float, required=True)
     p.add_argument('--min-temperature', type=float, default=1e-4)
+    p.add_argument('--erase-small-th', type=int, default=2)
+    p.add_argument('--cut-off', type=float, default=3.0)
     args = p.parse_args()
 
     tasks = []
@@ -28,6 +30,8 @@ def main():
             'max_step': args.max_step,
             'max_temperature': args.max_temperature,
             'min_temperature': args.min_temperature,
+            'erase_small_th': args.erase_small_th,
+            'cut_off': args.cut_off,
         })
 
     client = boto3.client('stepfunctions')
