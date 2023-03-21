@@ -2,6 +2,7 @@ use crate::{AxisMap, Grid3, GridFront, GridRight, McScheduler, Point};
 use rand::seq::SliceRandom;
 use rand::Rng;
 use rand_pcg::Mcg128Xsl64;
+use std::time::{Duration, Instant};
 
 #[derive(Clone)]
 pub struct GridBox {
@@ -66,7 +67,7 @@ impl GridBox {
         }
     }
 
-    pub fn make_can_put_points(&self) -> YetPointSet {
+    pub fn make_yet_points(&self) -> YetPointSet {
         let mut yet_yet = Vec::new();
         let mut yet = Vec::new();
         let mut can = Vec::new();
@@ -295,8 +296,8 @@ fn fill_all(
         if score >= cut_off {
             return None;
         }
-        let yet1 = grid_1.make_can_put_points();
-        let yet2 = grid_2.make_can_put_points();
+        let yet1 = grid_1.make_yet_points();
+        let yet2 = grid_2.make_yet_points();
         if yet1.satisfied() && yet2.satisfied() {
             break;
         }
@@ -321,7 +322,7 @@ fn fill_all(
     Some(score)
 }
 
-pub fn solve(
+pub fn mc_run(
     rng: &mut Mcg128Xsl64,
     d: u8,
     front1: &[Vec<u8>],
@@ -386,6 +387,55 @@ pub fn solve(
                 best = (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
             }
         }
+    }
+    best
+}
+
+pub struct SolveResult {
+    pub g1: Vec<u16>,
+    pub g2: Vec<u16>,
+    pub score: f64,
+    pub run_count: u32,
+}
+
+impl SolveResult {
+    pub fn worst() -> SolveResult {
+        SolveResult {
+            g1: Vec::new(),
+            g2: Vec::new(),
+            score: 1e300,
+            run_count: 0,
+        }
+    }
+
+    pub fn set_best(&mut self, g1: Vec<u16>, g2: Vec<u16>, score: f64) -> bool {
+        self.run_count += 1;
+        if score < self.score {
+            self.g1 = g1;
+            self.g2 = g2;
+            self.score = score;
+            true
+        } else {
+            false
+        }
+    }
+}
+
+pub fn mc_solve(
+    start: Instant,
+    limit: Duration,
+    rng: &mut Mcg128Xsl64,
+    d: u8,
+    front1: &[Vec<u8>],
+    right1: &[Vec<u8>],
+    front2: &[Vec<u8>],
+    right2: &[Vec<u8>],
+    scheduler: McScheduler,
+) -> SolveResult {
+    let mut best = SolveResult::worst();
+    while start.elapsed() < limit {
+        let (g1, g2, score) = mc_run(rng, d, &front1, &right1, &front2, &right2, scheduler);
+        best.set_best(g1, g2, score);
     }
     best
 }
