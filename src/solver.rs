@@ -198,26 +198,37 @@ fn fill_all(
     block: &mut BlockSet,
     cut_off: f64,
 ) -> Option<f64> {
-    fn single_update_loop(grid: &mut GridBox, p: Point, block: &mut BlockSet, place: u8) -> f64 {
+    fn single_update_loop(
+        grid: &mut GridBox,
+        p: Point,
+        block: &mut BlockSet,
+        cut_off: f64,
+        place: u8,
+    ) -> f64 {
+        if cut_off <= 2.0 {
+            return 2.0;
+        }
         let block_id = block.gen_half_block_id();
-        let mut c = 0;
+        let mut c = 1.0;
         let mut stack = vec![p];
         grid.put(p, block_id);
         block.push_half(place, p);
-        c += 1;
-        while let Some(p) = stack.pop() {
+        'OUT: while let Some(p) = stack.pop() {
             for dir in 0..6 {
                 if let Some(p) = p.next_cell(grid.d, dir) {
                     if grid.grid[p] == 0 {
                         grid.put(p, block_id);
                         block.push_half(place, p);
-                        c += 1;
+                        c += 1.0;
+                        if c + 1.0 / c >= cut_off {
+                            break 'OUT;
+                        }
                         stack.push(p);
                     }
                 }
             }
         }
-        1.0 / c as f64 + c as f64
+        c + 1.0 / c
     }
 
     let mut score = 0.0;
@@ -240,10 +251,10 @@ fn fill_all(
                 block.push_shared(block_id, pp1, pp2);
             }
             (Some(p), None) => {
-                score += single_update_loop(grid_1, p, block, 1);
+                score += single_update_loop(grid_1, p, block, cut_off - score, 1);
             }
             (None, Some(p)) => {
-                score += single_update_loop(grid_2, p, block, 2);
+                score += single_update_loop(grid_2, p, block, cut_off - score, 2);
             }
             (None, None) => return None,
         }
