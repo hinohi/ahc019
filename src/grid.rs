@@ -4,22 +4,21 @@ use std::ops::{Index, IndexMut};
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Point(u8, u8, u8);
 
+pub const D: usize = 5;
+
 #[derive(Debug, Clone)]
 pub struct Grid3<T> {
-    d: u8,
-    pub data: Vec<T>,
+    pub data: [[[T; D]; D]; D],
 }
 
 #[derive(Debug, Clone)]
 pub struct GridFront<T> {
-    d: u8,
-    pub data: Vec<T>,
+    pub data: [[T; D]; D],
 }
 
 #[derive(Debug, Clone)]
 pub struct GridRight<T> {
-    d: u8,
-    pub data: Vec<T>,
+    pub data: [[T; D]; D],
 }
 
 impl Point {
@@ -724,94 +723,84 @@ impl AxisMap {
 }
 
 impl<T: Copy> Grid3<T> {
-    pub fn new(d: u8, init: T) -> Grid3<T> {
-        let size = d as usize;
+    pub fn new(init: T) -> Grid3<T> {
         Grid3 {
-            d,
-            data: vec![init; size * size * size],
+            data: [[[init; D]; D]; D],
         }
     }
-}
 
-impl<T> Grid3<T> {
-    #[inline(always)]
-    fn at(&self, p: Point) -> usize {
-        let Point(x, y, z) = p;
-        let d = self.d as usize;
-        let x = x as usize;
-        let y = y as usize;
-        let z = z as usize;
-        (x * d + y) * d + z
+    pub fn to_vec(&self) -> Vec<T> {
+        let mut v = Vec::with_capacity(D * D * D);
+        for x in 0..D {
+            for y in 0..D {
+                for z in 0..D {
+                    v.push(self.data[x][y][z]);
+                }
+            }
+        }
+        v
     }
 }
 
-impl<T> GridFront<T> {
-    pub fn from_vec(d: u8, data: Vec<T>) -> GridFront<T> {
-        GridFront { d, data }
-    }
-
-    #[inline(always)]
-    fn at(&self, p: Point) -> usize {
-        let Point(x, _, z) = p;
-        (x * self.d + z) as usize
+impl<T: Default + Copy> GridFront<T> {
+    pub fn from_vec(v: Vec<T>) -> GridFront<T> {
+        let mut data = [[T::default(); D]; D];
+        for row in 0..D {
+            for col in 0..D {
+                data[row][col] = v[row * D + col];
+            }
+        }
+        GridFront { data }
     }
 }
 
-impl<T> GridRight<T> {
-    pub fn from_vec(d: u8, data: Vec<T>) -> GridRight<T> {
-        GridRight { d, data }
-    }
-
-    #[inline(always)]
-    fn at(&self, p: Point) -> usize {
-        let Point(_, y, z) = p;
-        (z * self.d + y) as usize
-    }
-
-    pub fn row(&self, z: usize) -> &[T] {
-        let d = self.d as usize;
-        &self.data[z * d..(z + 1) * d]
+impl<T: Default + Copy> GridRight<T> {
+    pub fn from_vec(v: Vec<T>) -> GridRight<T> {
+        let mut data = [[T::default(); D]; D];
+        for row in 0..D {
+            for col in 0..D {
+                data[row][col] = v[row * D + col];
+            }
+        }
+        GridRight { data }
     }
 }
 
 impl<T> Index<Point> for Grid3<T> {
     type Output = T;
     fn index(&self, p: Point) -> &T {
-        unsafe { self.data.get_unchecked(self.at(p)) }
+        &self.data[p.0 as usize][p.1 as usize][p.2 as usize]
     }
 }
 
 impl<T> IndexMut<Point> for Grid3<T> {
     fn index_mut(&mut self, p: Point) -> &mut T {
-        let i = self.at(p);
-        unsafe { self.data.get_unchecked_mut(i) }
+        &mut self.data[p.0 as usize][p.1 as usize][p.2 as usize]
     }
 }
 
 impl<T> Index<Point> for GridFront<T> {
     type Output = T;
     fn index(&self, p: Point) -> &T {
-        unsafe { self.data.get_unchecked(self.at(p)) }
+        &self.data[p.0 as usize][p.2 as usize]
     }
 }
 
 impl<T> IndexMut<Point> for GridFront<T> {
     fn index_mut(&mut self, p: Point) -> &mut T {
-        let i = self.at(p);
-        unsafe { self.data.get_unchecked_mut(i) }
+        &mut self.data[p.0 as usize][p.2 as usize]
     }
 }
 
 impl<T> Index<Point> for GridRight<T> {
     type Output = T;
     fn index(&self, p: Point) -> &T {
-        unsafe { self.data.get_unchecked(self.at(p)) }
+        &self.data[p.2 as usize][p.1 as usize]
     }
 }
 
 impl<T> IndexMut<Point> for GridRight<T> {
     fn index_mut(&mut self, p: Point) -> &mut T {
-        let i = self.at(p);
-        unsafe { self.data.get_unchecked_mut(i) }
+        &mut self.data[p.2 as usize][p.1 as usize]
     }
 }

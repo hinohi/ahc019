@@ -1,4 +1,4 @@
-use crate::{AxisMap, BlockSet, Grid3, GridFront, GridRight, McParams, Point};
+use crate::{AxisMap, BlockSet, Grid3, GridFront, GridRight, McParams, Point, D};
 use rand::{seq::SliceRandom, Rng};
 use rand_pcg::Mcg128Xsl64;
 use smallvec::{smallvec, SmallVec};
@@ -18,7 +18,7 @@ pub struct YetPointSet {
     can: SmallVec<[Point; 16]>,
 }
 
-type Hole = (u8, u8, Vec<u8>);
+type Hole = (usize, usize, Vec<usize>);
 
 pub fn make_face(shadow: &[Vec<u8>], t: bool) -> Vec<u8> {
     let d = shadow.len();
@@ -39,9 +39,9 @@ pub fn make_face(shadow: &[Vec<u8>], t: bool) -> Vec<u8> {
 
 impl GridBox {
     pub fn new(d: u8, front: &[Vec<u8>], right: &[Vec<u8>]) -> GridBox {
-        let mut grid = Grid3::new(d, 0);
-        let front = GridFront::from_vec(d, make_face(&front, false));
-        let right = GridRight::from_vec(d, make_face(&right, true));
+        let mut grid = Grid3::new(0);
+        let front = GridFront::from_vec(make_face(&front, false));
+        let right = GridRight::from_vec(make_face(&right, true));
         for x in 0..d {
             for y in 0..d {
                 for z in 0..d {
@@ -62,20 +62,19 @@ impl GridBox {
 
     pub fn make_hole_xzy(&self) -> Vec<Hole> {
         let mut v = Vec::new();
-        for x in 0..self.d {
-            for z in 0..self.d {
-                let front = self.front.data[(x * self.d + z) as usize];
+        for x in 0..D {
+            for z in 0..D {
+                let front = self.front.data[x][z];
                 if front == !0 {
                     continue;
                 }
                 v.push((
                     x,
                     z,
-                    self.right
-                        .row(z as usize)
+                    self.right.data[z]
                         .iter()
                         .enumerate()
-                        .filter_map(|(y, &right)| if right != !0 { Some(y as u8) } else { None })
+                        .filter_map(|(y, &right)| if right != !0 { Some(y) } else { None })
                         .collect(),
                 ));
             }
@@ -90,10 +89,10 @@ impl GridBox {
         for (x, z, yy) in hole.iter() {
             let x = *x;
             let z = *z;
-            let front = self.front.data[(x * self.d + z) as usize];
+            let front = self.front.data[x][z];
             for &y in yy.iter() {
-                let right = self.right.data[(z * self.d + y) as usize];
-                let p = Point::new(x, y, z);
+                let right = self.right.data[z][y];
+                let p = Point::new(x as u8, y as u8, z as u8);
                 match (front, right) {
                     (0, 0) => yet_yet.push(p),
                     (0, _) | (_, 0) => {
@@ -291,7 +290,7 @@ pub fn sa_run(
             &mut block,
             1e100,
         ) {
-            break (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
+            break (grid_1.grid.to_vec(), grid_2.grid.to_vec(), score);
         }
         grid_1 = GridBox::new(d, &front1, right1);
         grid_2 = GridBox::new(d, &front2, right2);
@@ -357,7 +356,7 @@ pub fn sa_run(
         if new_score < score || rng.gen_bool(((score - new_score) / temperature).exp()) {
             score = new_score;
             if score < best.2 {
-                best = (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
+                best = (grid_1.grid.to_vec(), grid_2.grid.to_vec(), score);
             }
         } else {
             grid_1 = before_state.0;
