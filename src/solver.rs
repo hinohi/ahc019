@@ -1,7 +1,7 @@
 use crate::{AxisMap, BlockSet, Grid3, GridFront, GridRight, McParams, Point};
 use rand::{seq::SliceRandom, Rng};
 use rand_pcg::Mcg128Xsl64;
-use smallvec::SmallVec;
+use smallvec::{smallvec, SmallVec};
 use std::time::{Duration, Instant};
 
 #[derive(Clone)]
@@ -162,7 +162,7 @@ fn grow_shared_block(
     let mut axis_map = AxisMap::new();
     let mut pp1 = Vec::with_capacity(4);
     let mut pp2 = Vec::with_capacity(4);
-    let mut stack = vec![(p1, p2)];
+    let mut stack: SmallVec<[_; 32]> = smallvec![(p1, p2)];
     grid_1.put(p1, block_id);
     grid_2.put(p2, block_id);
     pp1.push(p1);
