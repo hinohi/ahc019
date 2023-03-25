@@ -370,8 +370,8 @@ impl SolveResult {
         }
     }
 
-    pub fn set_best(&mut self, g1: Vec<u16>, g2: Vec<u16>, score: f64) -> bool {
-        self.run_count += 1;
+    pub fn set_best(&mut self, g1: Vec<u16>, g2: Vec<u16>, score: f64, mc: u32) -> bool {
+        self.run_count += mc;
         if score < self.score {
             self.g1 = g1;
             self.g2 = g2;
@@ -409,8 +409,7 @@ pub fn mc_solve(
             right2,
             params,
         );
-        best.set_best(g1, g2, score);
-        eprintln!("{}", step);
+        best.set_best(g1, g2, score, step);
     }
     best
 }
