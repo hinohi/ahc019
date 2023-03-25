@@ -1,6 +1,7 @@
 use crate::{AxisMap, BlockSet, Grid3, GridFront, GridRight, McParams, Point};
 use rand::{seq::SliceRandom, Rng};
 use rand_pcg::Mcg128Xsl64;
+use smallvec::SmallVec;
 use std::time::{Duration, Instant};
 
 #[derive(Clone)]
@@ -12,9 +13,9 @@ pub struct GridBox {
 }
 
 pub struct YetPointSet {
-    yet_yet: Vec<Point>,
-    yet: Vec<Point>,
-    can: Vec<Point>,
+    yet_yet: SmallVec<[Point; 128]>,
+    yet: SmallVec<[Point; 16]>,
+    can: SmallVec<[Point; 16]>,
 }
 
 pub fn make_face(shadow: &[Vec<u8>], t: bool) -> Vec<u8> {
@@ -81,9 +82,9 @@ impl GridBox {
     }
 
     pub fn make_yet_points(&self, hole: &[(u8, u8, Vec<u8>)]) -> YetPointSet {
-        let mut yet_yet = Vec::new();
-        let mut yet = Vec::new();
-        let mut can = Vec::new();
+        let mut yet_yet = SmallVec::new();
+        let mut yet = SmallVec::new();
+        let mut can = SmallVec::new();
         for (x, z, yy) in hole.iter() {
             let x = *x;
             let z = *z;

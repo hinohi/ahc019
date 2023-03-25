@@ -31,5 +31,5 @@ fn main() {
         &right2,
         params,
     );
-    println!("{} {}", result.run_count, result.score);
+    println!("{}", result.run_count);
 }
