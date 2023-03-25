@@ -405,10 +405,11 @@ pub fn mc_solve(
     right2: &[Vec<u8>],
     params: McParams,
 ) -> SolveResult {
-    let total_mill = (limit - start.elapsed()).as_millis() as u64;
-    let sub_limit = Duration::from_millis(total_mill / params.mc_run);
     let mut best = SolveResult::worst();
-    for _ in 0..params.mc_run {
+    for i in 0..params.mc_run {
+        let rest_run = params.mc_run - i;
+        let total_mill = (limit - start.elapsed()).as_millis() as u64;
+        let sub_limit = Duration::from_millis(total_mill / rest_run);
         let ((g1, g2, score), step) = sa_run(
             Instant::now(),
             sub_limit,
