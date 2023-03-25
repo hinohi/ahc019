@@ -31,5 +31,5 @@ fn main() {
         &right2,
         params,
     );
-    println!("{}", result.run_count);
+    println!("{}", (result.run_count as f64).ln());
 }
