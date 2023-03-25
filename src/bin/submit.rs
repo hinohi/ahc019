@@ -89,10 +89,10 @@ fn get_params(d: u8) -> McParams {
             min_temperature: 1e-8,
         },
         13 => McParams {
-            cut_off: 5.166818776552572,
-            erase_small_th: 28,
-            max_temperature: 6.334108581065736,
-            mc_run: 33,
+            cut_off: 1.371846843990141,
+            erase_small_th: 21,
+            max_temperature: 0.12853438018592478,
+            mc_run: 11,
             min_temperature: 1e-8,
         },
         14 => McParams {
