@@ -259,7 +259,7 @@ pub fn mc_run(
     front2: &[Vec<u8>],
     right2: &[Vec<u8>],
     params: McParams,
-) -> (Vec<u16>, Vec<u16>, f64) {
+) -> ((Vec<u16>, Vec<u16>, f64), u32) {
     let mut grid_1 = GridBox::new(d, &front1, right1);
     let mut grid_2 = GridBox::new(d, &front2, right2);
     let hole_1 = grid_1.make_hole_xzy();
@@ -283,14 +283,16 @@ pub fn mc_run(
     };
     let mut score = best.2;
     let mut elapsed = start.elapsed();
-    for step in 1.. {
+    let mut step = 0;
+    loop {
+        step += 1;
         elapsed = if step % 256 == 0 {
             start.elapsed()
         } else {
             elapsed
         };
         if elapsed > limit {
-            break;
+            break (best, step);
         }
         let temperature = params.temperature(limit, elapsed);
 
@@ -347,7 +349,6 @@ pub fn mc_run(
             block = before_state.2;
         }
     }
-    best
 }
 
 pub struct SolveResult {
@@ -395,7 +396,7 @@ pub fn mc_solve(
     let sub_limit = Duration::from_millis(total_mill / params.mc_run);
     let mut best = SolveResult::worst();
     for _ in 0..params.mc_run {
-        let (g1, g2, score) = mc_run(
+        let ((g1, g2, score), step) = mc_run(
             Instant::now(),
             sub_limit,
             rng,
@@ -407,6 +408,7 @@ pub fn mc_solve(
             params,
         );
         best.set_best(g1, g2, score);
+        eprintln!("{}", step);
     }
     best
 }
