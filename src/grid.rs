@@ -679,7 +679,7 @@ impl AxisMap {
         }
     }
 
-    pub fn map_axis(self, direction: u8, directions: &[u8]) -> SmallVec<[u8; 6]> {
+    pub fn map_axis(self, direction: u8, directions: [u8; 6]) -> SmallVec<[u8; 6]> {
         match self {
             AxisMap::None => directions.into(),
             AxisMap::Map1 { from, to } => {

@@ -173,7 +173,7 @@ fn grow_shared_block(
                 if grid_1.grid[p1] != 0 {
                     continue;
                 }
-                for dir2 in axis_map.map_axis(dir1, &directions2) {
+                for dir2 in axis_map.map_axis(dir1, directions2) {
                     if let Some(p2) = p2.next_cell(d, dir2) {
                         if grid_2.grid[p2] == 0 {
                             grid_1.put(p1, block_id);
