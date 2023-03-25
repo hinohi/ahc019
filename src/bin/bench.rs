@@ -30,9 +30,9 @@ fn main() {
         }
         let params = McParams {
             mc_run: 1,
-            max_temperature: 20.0,
-            min_temperature: 1e-4,
-            erase_small_th: 2,
+            max_temperature: 0.5,
+            min_temperature: 1e-8,
+            erase_small_th: 10,
             cut_off: 3.0,
         };
         let r = mc_solve(
