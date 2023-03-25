@@ -1,3 +1,4 @@
+use smallvec::{smallvec, SmallVec};
 use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -678,12 +679,12 @@ impl AxisMap {
         }
     }
 
-    pub fn map_axis(self, direction: u8, directions: &[u8]) -> Vec<u8> {
+    pub fn map_axis(self, direction: u8, directions: &[u8]) -> SmallVec<[u8; 6]> {
         match self {
-            AxisMap::None => directions.to_vec(),
+            AxisMap::None => directions.into(),
             AxisMap::Map1 { from, to } => {
                 if from == direction || from == direction ^ 1 {
-                    return vec![to];
+                    return smallvec![to];
                 }
                 let map = match (from, to) {
                     (from, to) if from == to => [0, 1, 2, 3, 4, 5],
@@ -716,7 +717,7 @@ impl AxisMap {
                     .collect()
             }
             AxisMap::Map2 { map } => {
-                vec![map[direction as usize]]
+                smallvec![map[direction as usize]]
             }
         }
     }
