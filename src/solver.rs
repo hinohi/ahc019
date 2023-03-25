@@ -6,7 +6,6 @@ use std::time::{Duration, Instant};
 
 #[derive(Clone)]
 pub struct GridBox {
-    d: u8,
     grid: Grid3<u16>,
     front: GridFront<u8>,
     right: GridRight<u8>,
@@ -52,12 +51,7 @@ impl GridBox {
                 }
             }
         }
-        GridBox {
-            d,
-            grid,
-            front,
-            right,
-        }
+        GridBox { grid, front, right }
     }
 
     pub fn make_hole_xzy(&self) -> Vec<Hole> {
@@ -153,7 +147,6 @@ fn grow_shared_block(
     p1: Point,
     p2: Point,
 ) -> (Vec<Point>, Vec<Point>) {
-    let d = grid_1.d;
     let mut directions1 = [0, 1, 2, 3, 4, 5];
     let mut directions2 = [0, 1, 2, 3, 4, 5];
     directions1.shuffle(rng);
@@ -168,12 +161,12 @@ fn grow_shared_block(
     pp2.push(p2);
     while let Some((p1, p2)) = stack.pop() {
         for &dir1 in directions1.iter() {
-            if let Some(p1) = p1.next_cell(d, dir1) {
+            if let Some(p1) = p1.next_cell(dir1) {
                 if grid_1.grid[p1] != 0 {
                     continue;
                 }
                 for dir2 in axis_map.map_axis(dir1, directions2) {
-                    if let Some(p2) = p2.next_cell(d, dir2) {
+                    if let Some(p2) = p2.next_cell(dir2) {
                         if grid_2.grid[p2] == 0 {
                             grid_1.put(p1, block_id);
                             grid_2.put(p2, block_id);
@@ -217,7 +210,7 @@ fn fill_all(
         block.push_half(place, p);
         'OUT: while let Some(p) = stack.pop() {
             for dir in 0..6 {
-                if let Some(p) = p.next_cell(grid.d, dir) {
+                if let Some(p) = p.next_cell(dir) {
                     if grid.grid[p] == 0 {
                         grid.put(p, block_id);
                         block.push_half(place, p);

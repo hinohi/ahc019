@@ -4,7 +4,7 @@ use std::ops::{Index, IndexMut};
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Point(u8, u8, u8);
 
-pub const D: usize = 5;
+pub const D: usize = 14;
 
 #[derive(Debug, Clone)]
 pub struct Grid3<T> {
@@ -27,42 +27,42 @@ impl Point {
         Point(x, y, z)
     }
 
-    pub fn to_x(self, d: u8, dx: u8) -> Option<Point> {
+    fn to_x(self, dx: u8) -> Option<Point> {
         let x = self.0.wrapping_add(dx);
-        if x < d {
+        if x < D as u8 {
             Some(Point(x, self.1, self.2))
         } else {
             None
         }
     }
 
-    pub fn to_y(self, d: u8, dy: u8) -> Option<Point> {
+    fn to_y(self, dy: u8) -> Option<Point> {
         let y = self.1.wrapping_add(dy);
-        if y < d {
+        if y < D as u8 {
             Some(Point(self.0, y, self.2))
         } else {
             None
         }
     }
 
-    pub fn to_z(self, d: u8, dz: u8) -> Option<Point> {
+    fn to_z(self, dz: u8) -> Option<Point> {
         let z = self.2.wrapping_add(dz);
-        if z < d {
+        if z < D as u8 {
             Some(Point(self.0, self.1, z))
         } else {
             None
         }
     }
 
-    pub fn next_cell(self, d: u8, direction: u8) -> Option<Point> {
+    pub fn next_cell(self, direction: u8) -> Option<Point> {
         match direction {
-            0 => self.to_x(d, 1),
-            1 => self.to_x(d, !0),
-            2 => self.to_y(d, 1),
-            3 => self.to_y(d, !0),
-            4 => self.to_z(d, 1),
-            5 => self.to_z(d, !0),
-            _ => None,
+            0 => self.to_x(1),
+            1 => self.to_x(!0),
+            2 => self.to_y(1),
+            3 => self.to_y(!0),
+            4 => self.to_z(1),
+            5 => self.to_z(!0),
+            _ => unreachable!(),
         }
     }
 }
@@ -769,13 +769,18 @@ impl<T: Default + Copy> GridRight<T> {
 impl<T> Index<Point> for Grid3<T> {
     type Output = T;
     fn index(&self, p: Point) -> &T {
-        &self.data[p.0 as usize][p.1 as usize][p.2 as usize]
+        unsafe {
+            self.data
+                .get_unchecked(p.0 as usize)
+                .get_unchecked(p.1 as usize)
+                .get_unchecked(p.2 as usize)
+        }
     }
 }
 
 impl<T> IndexMut<Point> for Grid3<T> {
     fn index_mut(&mut self, p: Point) -> &mut T {
-        &mut self.data[p.0 as usize][p.1 as usize][p.2 as usize]
+        unsafe { self.data[p.0 as usize][p.1 as usize].get_unchecked_mut(p.2 as usize) }
     }
 }
 
