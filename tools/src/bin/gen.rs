@@ -12,7 +12,7 @@ struct Cli {
     #[clap(long = "D")]
     D: Option<usize>,
     /// Path to input directory
-    #[clap(short = 'd', long = "dir", default_value = "in")]
+    #[clap(long = "dir", default_value = "in")]
     dir: PathBuf,
 }
 
