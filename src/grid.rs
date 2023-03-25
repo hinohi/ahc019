@@ -732,6 +732,7 @@ impl<T: Copy> Grid3<T> {
 }
 
 impl<T> Grid3<T> {
+    #[inline(always)]
     fn at(&self, p: Point) -> usize {
         let Point(x, y, z) = p;
         let d = self.d as usize;
@@ -767,6 +768,7 @@ impl<T> GridFront<T> {
         GridFront { d, data }
     }
 
+    #[inline(always)]
     fn at(&self, p: Point) -> usize {
         let Point(x, _, z) = p;
         (x * self.d + z) as usize
@@ -778,6 +780,7 @@ impl<T> GridRight<T> {
         GridRight { d, data }
     }
 
+    #[inline(always)]
     fn at(&self, p: Point) -> usize {
         let Point(_, y, z) = p;
         (z * self.d + y) as usize
@@ -792,41 +795,41 @@ impl<T> GridRight<T> {
 impl<T> Index<Point> for Grid3<T> {
     type Output = T;
     fn index(&self, p: Point) -> &T {
-        &self.data[self.at(p)]
+        unsafe { self.data.get_unchecked(self.at(p)) }
     }
 }
 
 impl<T> IndexMut<Point> for Grid3<T> {
     fn index_mut(&mut self, p: Point) -> &mut T {
         let i = self.at(p);
-        &mut self.data[i]
+        unsafe { self.data.get_unchecked_mut(i) }
     }
 }
 
 impl<T> Index<Point> for GridFront<T> {
     type Output = T;
     fn index(&self, p: Point) -> &T {
-        &self.data[self.at(p)]
+        unsafe { self.data.get_unchecked(self.at(p)) }
     }
 }
 
 impl<T> IndexMut<Point> for GridFront<T> {
     fn index_mut(&mut self, p: Point) -> &mut T {
         let i = self.at(p);
-        &mut self.data[i]
+        unsafe { self.data.get_unchecked_mut(i) }
     }
 }
 
 impl<T> Index<Point> for GridRight<T> {
     type Output = T;
     fn index(&self, p: Point) -> &T {
-        &self.data[self.at(p)]
+        unsafe { self.data.get_unchecked(self.at(p)) }
     }
 }
 
 impl<T> IndexMut<Point> for GridRight<T> {
     fn index_mut(&mut self, p: Point) -> &mut T {
         let i = self.at(p);
-        &mut self.data[i]
+        unsafe { self.data.get_unchecked_mut(i) }
     }
 }

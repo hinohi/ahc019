@@ -155,8 +155,8 @@ fn grow_shared_block(
     let mut directions = [0, 1, 2, 3, 4, 5];
     directions.shuffle(rng);
     let mut axis_map = AxisMap::new();
-    let mut pp1 = Vec::new();
-    let mut pp2 = Vec::new();
+    let mut pp1 = Vec::with_capacity(4);
+    let mut pp2 = Vec::with_capacity(4);
     let mut stack = vec![(p1, p2)];
     grid_1.put(p1, block_id);
     grid_2.put(p2, block_id);

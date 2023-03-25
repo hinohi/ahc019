@@ -10,6 +10,7 @@ pub struct BlockSet {
     pub half2: Vec<Point>,
     next_half_id: u16,
 }
+
 impl BlockSet {
     pub fn new() -> BlockSet {
         BlockSet {
