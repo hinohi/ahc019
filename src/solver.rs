@@ -300,6 +300,7 @@ pub fn sa_run(
     let mut score = best.2;
     let mut elapsed = start.elapsed();
     let mut step = 0;
+    let mut need_erase = true;
     loop {
         step += 1;
         elapsed = if step % 256 == 0 {
@@ -312,25 +313,27 @@ pub fn sa_run(
         }
         let temperature = params.temperature(limit, elapsed);
 
-        let before_state = (grid_1.clone(), grid_2.clone(), block.clone());
-
-        for &p in block.half1.iter() {
-            grid_1.remove(p);
-        }
-        for &p in block.half2.iter() {
-            grid_2.remove(p);
-        }
-        block.half_reset();
-        if params.erase_small_th > 0 {
-            while let Some((p1, p2)) = block.pop_small(params.erase_small_th) {
-                for p in p1 {
-                    grid_1.remove(p);
-                }
-                for p in p2 {
-                    grid_2.remove(p);
+        if need_erase {
+            for &p in block.half1.iter() {
+                grid_1.remove(p);
+            }
+            for &p in block.half2.iter() {
+                grid_2.remove(p);
+            }
+            block.half_reset();
+            if params.erase_small_th > 0 {
+                while let Some((p1, p2)) = block.pop_small(params.erase_small_th) {
+                    for p in p1 {
+                        grid_1.remove(p);
+                    }
+                    for p in p2 {
+                        grid_2.remove(p);
+                    }
                 }
             }
         }
+        let before_state = (grid_1.clone(), grid_2.clone(), block.clone());
+
         if !block.shared.is_empty() {
             let (p1, p2) = block.pop_random(rng);
             for p in p1 {
@@ -359,10 +362,12 @@ pub fn sa_run(
             if score < best.2 {
                 best = (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
             }
+            need_erase = true;
         } else {
             grid_1 = before_state.0;
             grid_2 = before_state.1;
             block = before_state.2;
+            need_erase = false;
         }
     }
 }
