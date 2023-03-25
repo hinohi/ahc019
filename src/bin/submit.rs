@@ -30,6 +30,82 @@ fn print_ans(g1: &[u16], g2: &[u16]) {
     print_v(&g2, &block_id_map);
 }
 
+fn get_params(d: u8) -> McParams {
+    match d {
+        5 => McParams {
+            mc_run: 71,
+            max_temperature: 2.424978521005016,
+            min_temperature: 1e-8,
+            erase_small_th: 5,
+            cut_off: 3.7165636563013154,
+        },
+        6 => McParams {
+            mc_run: 50,
+            max_temperature: 1.424978521005016,
+            min_temperature: 1e-8,
+            erase_small_th: 8,
+            cut_off: 3.7165636563013154,
+        },
+        7 => McParams {
+            mc_run: 40,
+            max_temperature: 0.7,
+            min_temperature: 1e-8,
+            erase_small_th: 9,
+            cut_off: 3.7165636563013154,
+        },
+        8 => McParams {
+            mc_run: 28,
+            max_temperature: 0.10302552733534334,
+            min_temperature: 1e-8,
+            erase_small_th: 10,
+            cut_off: 3.1732947086447654,
+        },
+        9 => McParams {
+            mc_run: 24,
+            max_temperature: 0.09,
+            min_temperature: 1e-8,
+            erase_small_th: 14,
+            cut_off: 3.2732947086447654,
+        },
+        10 => McParams {
+            mc_run: 20,
+            max_temperature: 0.08,
+            min_temperature: 1e-8,
+            erase_small_th: 18,
+            cut_off: 3.333955750814579,
+        },
+        11 => McParams {
+            mc_run: 18,
+            max_temperature: 0.08,
+            min_temperature: 1e-8,
+            erase_small_th: 20,
+            cut_off: 3.333955750814579,
+        },
+        12 => McParams {
+            mc_run: 16,
+            max_temperature: 0.07667314618950373,
+            min_temperature: 1e-8,
+            erase_small_th: 22,
+            cut_off: 3.971231018940054,
+        },
+        13 => McParams {
+            mc_run: 12,
+            max_temperature: 0.05667314618950373,
+            min_temperature: 1e-8,
+            erase_small_th: 26,
+            cut_off: 3.971231018940054,
+        },
+        14 => McParams {
+            mc_run: 8,
+            max_temperature: 0.03667314618950373,
+            min_temperature: 1e-8,
+            erase_small_th: 30,
+            cut_off: 3.971231018940054,
+        },
+        _ => unreachable!(),
+    }
+}
+
 fn main() {
     let start = Instant::now();
     input! {
@@ -39,13 +115,7 @@ fn main() {
         front2: [Bytes; d],
         right2: [Bytes; d],
     }
-    let params = McParams {
-        mc_run: 4,
-        max_temperature: 2.0,
-        min_temperature: 1e-4,
-        erase_small_th: 2,
-        cut_off: 3.0,
-    };
+    let params = get_params(d);
     let mut rng = Mcg128Xsl64::new(9085);
     let result = mc_solve(
         start,
