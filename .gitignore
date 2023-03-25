@@ -1,2 +1,3 @@
 /target
-exec_log
+__pycache__
+
