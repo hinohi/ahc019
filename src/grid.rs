@@ -678,10 +678,6 @@ impl AxisMap {
         }
     }
 
-    pub fn fixed(self) -> bool {
-        matches!(self, AxisMap::Map2 { .. })
-    }
-
     pub fn map_axis(self, direction: u8, directions: &[u8]) -> Vec<u8> {
         match self {
             AxisMap::None => directions.to_vec(),
@@ -745,26 +741,6 @@ impl<T> Grid3<T> {
         let y = y as usize;
         let z = z as usize;
         (x * d + y) * d + z
-    }
-}
-
-impl<T: Copy> GridFront<T> {
-    pub fn new(d: u8, init: T) -> GridFront<T> {
-        let size = d as usize;
-        GridFront {
-            d,
-            data: vec![init; size * size],
-        }
-    }
-}
-
-impl<T: Copy> GridRight<T> {
-    pub fn new(d: u8, init: T) -> GridRight<T> {
-        let size = d as usize;
-        GridRight {
-            d,
-            data: vec![init; size * size],
-        }
     }
 }
 
