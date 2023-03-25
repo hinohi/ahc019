@@ -325,15 +325,15 @@ pub fn mc_run(
                 cut_off,
             )
             .unwrap_or(1e100);
-        if new_score > score || !rng.gen_bool(((new_score - score) / temperature).exp()) {
-            grid_1 = before_state.0;
-            grid_2 = before_state.1;
-            block = before_state.2;
-        } else {
+        if new_score < score || rng.gen_bool(((score - new_score) / temperature).exp()) {
             score = new_score;
             if score < best.2 {
                 best = (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
             }
+        } else {
+            grid_1 = before_state.0;
+            grid_2 = before_state.1;
+            block = before_state.2;
         }
     }
     best
