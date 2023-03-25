@@ -250,6 +250,8 @@ fn fill_all(
 }
 
 pub fn mc_run(
+    start: Instant,
+    limit: Duration,
     rng: &mut Mcg128Xsl64,
     d: u8,
     front1: &[Vec<u8>],
@@ -280,8 +282,17 @@ pub fn mc_run(
         block = BlockSet::new();
     };
     let mut score = best.2;
-    for step in 0..params.max_step {
-        let temperature = params.temperature(step);
+    let mut elapsed = start.elapsed();
+    for step in 1.. {
+        elapsed = if step % 256 == 0 {
+            start.elapsed()
+        } else {
+            elapsed
+        };
+        if elapsed > limit {
+            break;
+        }
+        let temperature = params.temperature(limit, elapsed);
 
         let before_state = (grid_1.clone(), grid_2.clone(), block.clone());
 
@@ -380,14 +391,21 @@ pub fn mc_solve(
     right2: &[Vec<u8>],
     params: McParams,
 ) -> SolveResult {
+    let total_mill = (limit - start.elapsed()).as_millis() as u64;
+    let sub_limit = Duration::from_millis(total_mill / params.mc_run);
     let mut best = SolveResult::worst();
-    let t1 = Instant::now();
-    let (g1, g2, score) = mc_run(rng, d, &front1, &right1, &front2, &right2, params);
-    let step_duration = t1.elapsed();
-    best.set_best(g1, g2, score);
-
-    while start.elapsed() + step_duration < limit {
-        let (g1, g2, score) = mc_run(rng, d, &front1, &right1, &front2, &right2, params);
+    for _ in 0..params.mc_run {
+        let (g1, g2, score) = mc_run(
+            Instant::now(),
+            sub_limit,
+            rng,
+            d,
+            front1,
+            right1,
+            front2,
+            right2,
+            params,
+        );
         best.set_best(g1, g2, score);
     }
     best

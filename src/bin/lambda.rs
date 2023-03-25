@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 struct Request {
     seed: u64,
     d: usize,
-    max_step: u32,
+    mc_run: u64,
     max_temperature: f64,
     min_temperature: f64,
     erase_small_th: usize,
@@ -45,7 +45,7 @@ async fn func(event: LambdaEvent<Request>) -> Result<Response, Error> {
     let right2 = face_conv(&input.r[1]);
     let mut rng = Mcg128Xsl64::new(32343);
     let scheduler = McParams {
-        max_step: event.payload.max_step,
+        mc_run: event.payload.mc_run,
         max_temperature: event.payload.max_temperature,
         min_temperature: event.payload.min_temperature,
         erase_small_th: event.payload.erase_small_th,

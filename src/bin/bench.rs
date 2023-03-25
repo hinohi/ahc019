@@ -1,6 +1,7 @@
-use ahc019::{mc_run, McParams};
+use ahc019::{mc_solve, McParams};
 use proconio::{input, marker::Bytes, source::auto::AutoSource};
 use rand_pcg::Mcg128Xsl64;
+use std::time::{Duration, Instant};
 
 fn main() {
     let data = [
@@ -28,15 +29,25 @@ fn main() {
             right2: [Bytes; d],
         }
         let params = McParams {
-            max_step: 1000,
+            mc_run: 3,
             max_temperature: 20.0,
             min_temperature: 1e-4,
             erase_small_th: 2,
             cut_off: 3.0,
         };
-        let (g1, g2, score) = mc_run(&mut rng, d, &front1, &right1, &front2, &right2, params);
-        assert!(g1.len() < 10000);
-        assert!(g2.len() < 10000);
-        assert!(score > 0.0);
+        let r = mc_solve(
+            Instant::now(),
+            Duration::from_millis(1000),
+            &mut rng,
+            d,
+            &front1,
+            &right1,
+            &front2,
+            &right2,
+            params,
+        );
+        assert!(r.g1.len() < 10000);
+        assert!(r.g2.len() < 10000);
+        assert!(r.score > 0.0);
     }
 }

@@ -40,7 +40,7 @@ fn main() {
         right2: [Bytes; d],
     }
     let params = McParams {
-        max_step: 1000000,
+        mc_run: 4,
         max_temperature: 2.0,
         min_temperature: 1e-4,
         erase_small_th: 2,
