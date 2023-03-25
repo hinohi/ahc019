@@ -152,8 +152,10 @@ fn grow_shared_block(
     p2: Point,
 ) -> (Vec<Point>, Vec<Point>) {
     let d = grid_1.d;
-    let mut directions = [0, 1, 2, 3, 4, 5];
-    directions.shuffle(rng);
+    let mut directions1 = [0, 1, 2, 3, 4, 5];
+    let mut directions2 = [0, 1, 2, 3, 4, 5];
+    directions1.shuffle(rng);
+    directions2.shuffle(rng);
     let mut axis_map = AxisMap::new();
     let mut pp1 = Vec::with_capacity(4);
     let mut pp2 = Vec::with_capacity(4);
@@ -163,12 +165,12 @@ fn grow_shared_block(
     pp1.push(p1);
     pp2.push(p2);
     while let Some((p1, p2)) = stack.pop() {
-        for &dir1 in directions.iter() {
+        for &dir1 in directions1.iter() {
             if let Some(p1) = p1.next_cell(d, dir1) {
                 if grid_1.grid[p1] != 0 {
                     continue;
                 }
-                for dir2 in axis_map.map_axis(dir1, &directions) {
+                for dir2 in axis_map.map_axis(dir1, &directions2) {
                     if let Some(p2) = p2.next_cell(d, dir2) {
                         if grid_2.grid[p2] == 0 {
                             grid_1.put(p1, block_id);

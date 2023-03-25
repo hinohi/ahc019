@@ -22,6 +22,7 @@ pub struct GridRight<T> {
 }
 
 impl Point {
+    #[inline(always)]
     pub const fn new(x: u8, y: u8, z: u8) -> Point {
         Point(x, y, z)
     }
@@ -675,6 +676,10 @@ impl AxisMap {
             }
             m => m,
         }
+    }
+
+    pub fn fixed(self) -> bool {
+        matches!(self, AxisMap::Map2 { .. })
     }
 
     pub fn map_axis(self, direction: u8, directions: &[u8]) -> Vec<u8> {
