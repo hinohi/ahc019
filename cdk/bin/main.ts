@@ -13,7 +13,7 @@ export class Ahc019 extends cdk.Stack {
     const lambdaFunction = new lambda.DockerImageFunction(this, "Function", {
       functionName: "ahc019",
       memorySize: 1792,
-      timeout: cdk.Duration.seconds(10),
+      timeout: cdk.Duration.seconds(20),
       code: lambda.DockerImageCode.fromImageAsset(
         path.join(__dirname, "../.."),
         {
