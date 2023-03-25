@@ -18,6 +18,8 @@ pub struct YetPointSet {
     can: SmallVec<[Point; 16]>,
 }
 
+type Hole = (u8, u8, Vec<u8>);
+
 pub fn make_face(shadow: &[Vec<u8>], t: bool) -> Vec<u8> {
     let d = shadow.len();
     let mut v = vec![!0; d * d];
@@ -58,7 +60,7 @@ impl GridBox {
         }
     }
 
-    pub fn make_hole_xzy(&self) -> Vec<(u8, u8, Vec<u8>)> {
+    pub fn make_hole_xzy(&self) -> Vec<Hole> {
         let mut v = Vec::new();
         for x in 0..self.d {
             for z in 0..self.d {
@@ -81,7 +83,7 @@ impl GridBox {
         v
     }
 
-    pub fn make_yet_points(&self, hole: &[(u8, u8, Vec<u8>)]) -> YetPointSet {
+    pub fn make_yet_points(&self, hole: &[Hole]) -> YetPointSet {
         let mut yet_yet = SmallVec::new();
         let mut yet = SmallVec::new();
         let mut can = SmallVec::new();
@@ -192,8 +194,8 @@ fn grow_shared_block(
 
 fn fill_all(
     rng: &mut Mcg128Xsl64,
-    hole_1: &[(u8, u8, Vec<u8>)],
-    hole_2: &[(u8, u8, Vec<u8>)],
+    hole_1: &[Hole],
+    hole_2: &[Hole],
     grid_1: &mut GridBox,
     grid_2: &mut GridBox,
     block: &mut BlockSet,
