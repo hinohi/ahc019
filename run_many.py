@@ -15,7 +15,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('-n', type=int, required=True)
     p.add_argument('-d', type=int, required=True)
-    p.add_argument('--max-step', '-S', type=int, required=True)
+    p.add_argument('--mc-run', '-R', type=int, required=True)
     p.add_argument('--max-temperature', '-T', type=float, required=True)
     p.add_argument('--min-temperature', type=float, default=1e-4)
     p.add_argument('--erase-small-th', type=int, default=2)
@@ -27,7 +27,7 @@ def main():
         tasks.append({
             'seed': seed + 1,
             'd': args.d,
-            'max_step': args.max_step,
+            'mc_run': args.mc_run,
             'max_temperature': args.max_temperature,
             'min_temperature': args.min_temperature,
             'erase_small_th': args.erase_small_th,
