@@ -251,7 +251,7 @@ fn fill_all(
     Some(score)
 }
 
-pub fn mc_run(
+pub fn sa_run(
     start: Instant,
     limit: Duration,
     rng: &mut Mcg128Xsl64,
@@ -398,7 +398,7 @@ pub fn mc_solve(
     let sub_limit = Duration::from_millis(total_mill / params.mc_run);
     let mut best = SolveResult::worst();
     for _ in 0..params.mc_run {
-        let ((g1, g2, score), step) = mc_run(
+        let ((g1, g2, score), step) = sa_run(
             Instant::now(),
             sub_limit,
             rng,
