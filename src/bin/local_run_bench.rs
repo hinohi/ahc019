@@ -12,23 +12,6 @@ fn main() {
         front2: [Bytes; d],
         right2: [Bytes; d],
     }
-    let params = McParams {
-        erase_small_th: match d {
-            5 => 5,
-            6 => 5,
-            7 => 8,
-            8 => 14,
-            9 => 17,
-            10 => 20,
-            11 => 25,
-            12 => 30,
-            13 => 35,
-            14 => 40,
-            _ => unreachable!(),
-        },
-        mc_run: 1,
-        erase_shared_p: 0.8,
-    };
     let input = SolveInput {
         start,
         limit: Duration::from_millis(200),
@@ -36,7 +19,7 @@ fn main() {
         right1,
         front2,
         right2,
-        params,
+        params: McParams::opt(d),
     };
     let mut rng = Mcg128Xsl64::new(3456);
     let result = mc_solve(&mut rng, &input, d);

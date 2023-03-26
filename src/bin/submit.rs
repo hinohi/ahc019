@@ -30,72 +30,6 @@ fn print_ans(g1: &[u16], g2: &[u16]) {
     print_v(g2, &block_id_map);
 }
 
-fn get_params(d: u8) -> McParams {
-    match d {
-        // -0.8665073454427983
-        5 => McParams {
-            erase_shared_p: 0.7641974640494824,
-            erase_small_th: 5,
-            mc_run: 45,
-        },
-        // -1.0465880873030173
-        6 => McParams {
-            erase_shared_p: 0.5271543071699281,
-            erase_small_th: 8,
-            mc_run: 100,
-        },
-        // -1.062290396485194
-        7 => McParams {
-            erase_shared_p: 0.3526343942727514,
-            erase_small_th: 11,
-            mc_run: 64,
-        },
-        // -1.0700763969294835
-        8 => McParams {
-            erase_shared_p: 0.8262167169942501,
-            erase_small_th: 12,
-            mc_run: 86,
-        },
-        // -1.1036122300059443
-        9 => McParams {
-            erase_shared_p: 0.6772038451250363,
-            erase_small_th: 17,
-            mc_run: 31,
-        },
-        // -1.1982188777388496
-        10 => McParams {
-            erase_shared_p: 0.44152202788755307,
-            erase_small_th: 20,
-            mc_run: 51,
-        },
-        // -1.0348616264530257
-        11 => McParams {
-            erase_shared_p: 0.6873535191800519,
-            erase_small_th: 30,
-            mc_run: 50,
-        },
-        // -1.4303001266271784
-        12 => McParams {
-            erase_shared_p: 0.8043228784487291,
-            erase_small_th: 37,
-            mc_run: 56,
-        },
-        // -1.4204831877285795
-        13 => McParams {
-            erase_shared_p: 0.652187537788713,
-            erase_small_th: 50,
-            mc_run: 35,
-        },
-        // -1.6196117306757933
-        14 => McParams {
-            erase_shared_p: 0.7227385983082774,
-            erase_small_th: 60,
-            mc_run: 17,
-        },
-        _ => unreachable!(),
-    }
-}
-
 fn main() {
     let start = Instant::now();
     input! {
@@ -105,7 +39,7 @@ fn main() {
         front2: [Bytes; d],
         right2: [Bytes; d],
     }
-    let params = get_params(d);
+    let params = McParams::opt(d);
     let input = SolveInput {
         start,
         limit: Duration::from_millis(5800),
