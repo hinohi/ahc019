@@ -4,7 +4,7 @@ use rand_pcg::Mcg128Xsl64;
 use smallvec::{smallvec, SmallVec};
 use std::time::{Duration, Instant};
 
-#[derive(Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GridBox {
     d: u8,
     grid: Grid3<u16>,
@@ -60,11 +60,24 @@ impl GridBox {
         }
     }
 
+    pub fn reset(&mut self, hole: &[Hole]) {
+        for (x, z, yy) in hole.iter() {
+            let x = *x;
+            let z = *z;
+            self.front[(x, z)] = 0;
+            for &y in yy.iter() {
+                self.right[(y, z)] = 0;
+                let p = Point::new(x, y, z);
+                self.grid[p] = 0;
+            }
+        }
+    }
+
     pub fn make_hole_xzy(&self) -> Vec<Hole> {
         let mut v = Vec::new();
         for x in 0..self.d {
             for z in 0..self.d {
-                let front = self.front.data[(x * self.d + z) as usize];
+                let front = self.front[(x, z)];
                 if front == !0 {
                     continue;
                 }
@@ -293,9 +306,9 @@ pub fn sa_run(
         ) {
             break (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
         }
-        grid_1 = GridBox::new(d, &front1, right1);
-        grid_2 = GridBox::new(d, &front2, right2);
-        block = BlockSet::new();
+        grid_1.reset(&hole_1);
+        grid_2.reset(&hole_2);
+        block.reset();
     };
     let mut score = best.2;
     let mut elapsed = start.elapsed();

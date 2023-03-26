@@ -22,6 +22,14 @@ impl BlockSet {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.shared.clear();
+        self.shared_id_stock.clear();
+        self.half1.clear();
+        self.half2.clear();
+        self.next_half_id = 10000;
+    }
+
     pub fn shared_only_score(&self) -> f64 {
         let mut score = 0.0;
         for (_, v, _) in self.shared.iter() {
