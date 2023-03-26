@@ -197,10 +197,11 @@ fn grow_shared_block(
     rng: &mut Mcg128Xsl64,
     grid_1: &mut GridBox,
     grid_2: &mut GridBox,
-    block_id: u16,
+    block: &mut BlockSet,
     p1: Point,
     p2: Point,
-) -> (Vec<Point>, Vec<Point>) {
+) -> f64 {
+    let block_id = block.gen_shared_block_id();
     let d = grid_1.d;
     let mut directions1 = [0, 1, 2, 3, 4, 5];
     let mut directions2 = [0, 1, 2, 3, 4, 5];
@@ -236,7 +237,9 @@ fn grow_shared_block(
             }
         }
     }
-    (pp1, pp2)
+    let size = pp1.len();
+    block.push_shared(block_id, pp1, pp2);
+    1.0 / size as f64
 }
 
 fn fill_all(
@@ -295,10 +298,7 @@ fn fill_all(
         let p2 = yet2.chose(rng);
         match (p1, p2) {
             (Some(p1), Some(p2)) => {
-                let block_id = block.gen_shared_block_id();
-                let (pp1, pp2) = grow_shared_block(rng, grid_1, grid_2, block_id, p1, p2);
-                score += 1.0 / pp1.len() as f64;
-                block.push_shared(block_id, pp1, pp2);
+                score += grow_shared_block(rng, grid_1, grid_2, block, p1, p2);
             }
             (Some(p), None) => {
                 score += single_update_loop(grid_1, p, block, cut_off - score, 1);
