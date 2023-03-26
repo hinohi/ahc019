@@ -1,68 +1,111 @@
 use smallvec::{smallvec, SmallVec};
-use std::ops::{Index, IndexMut};
+use std::{
+    fmt::Debug,
+    hash::Hash,
+    marker::PhantomData,
+    ops::{Index, IndexMut},
+};
+
+pub trait DSize: Debug + Copy + Eq + Ord + Hash {
+    const SIZE: u8;
+}
+
+pub mod d {
+    use super::DSize;
+    macro_rules! impl_d {
+        ($name:ident, $size:expr) => {
+            #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+            pub struct $name;
+            impl DSize for $name {
+                const SIZE: u8 = $size;
+            }
+        };
+    }
+
+    impl_d!(U5, 5);
+    impl_d!(U6, 6);
+    impl_d!(U7, 7);
+    impl_d!(U8, 8);
+    impl_d!(U9, 9);
+    impl_d!(U10, 10);
+    impl_d!(U11, 11);
+    impl_d!(U12, 12);
+    impl_d!(U13, 13);
+    impl_d!(U14, 14);
+}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Point(u8, u8, u8);
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Grid3<T> {
-    d: u8,
-    pub data: Vec<T>,
+pub struct Point<D> {
+    x: u8,
+    y: u8,
+    z: u8,
+    _phantom: PhantomData<D>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct GridFront<T> {
-    d: u8,
+pub struct Grid3<T, D> {
     pub data: Vec<T>,
+    _phantom: PhantomData<D>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct GridRight<T> {
-    d: u8,
+pub struct GridFront<T, D> {
     pub data: Vec<T>,
+    _phantom: PhantomData<D>,
 }
 
-impl Point {
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct GridRight<T, D> {
+    pub data: Vec<T>,
+    _phantom: PhantomData<D>,
+}
+
+impl<D: DSize> Point<D> {
     #[inline(always)]
-    pub const fn new(x: u8, y: u8, z: u8) -> Point {
-        Point(x, y, z)
+    pub const fn new(x: u8, y: u8, z: u8) -> Point<D> {
+        Point {
+            x,
+            y,
+            z,
+            _phantom: PhantomData,
+        }
     }
 
-    pub fn to_x(self, d: u8, dx: u8) -> Option<Point> {
-        let x = self.0.wrapping_add(dx);
-        if x < d {
-            Some(Point(x, self.1, self.2))
+    fn to_x(self, dx: u8) -> Option<Point<D>> {
+        let x = self.x.wrapping_add(dx);
+        if x < D::SIZE {
+            Some(Point::new(x, self.y, self.z))
         } else {
             None
         }
     }
 
-    pub fn to_y(self, d: u8, dy: u8) -> Option<Point> {
-        let y = self.1.wrapping_add(dy);
-        if y < d {
-            Some(Point(self.0, y, self.2))
+    fn to_y(self, dy: u8) -> Option<Point<D>> {
+        let y = self.y.wrapping_add(dy);
+        if y < D::SIZE {
+            Some(Point::new(self.x, y, self.z))
         } else {
             None
         }
     }
 
-    pub fn to_z(self, d: u8, dz: u8) -> Option<Point> {
-        let z = self.2.wrapping_add(dz);
-        if z < d {
-            Some(Point(self.0, self.1, z))
+    fn to_z(self, dz: u8) -> Option<Point<D>> {
+        let z = self.z.wrapping_add(dz);
+        if z < D::SIZE {
+            Some(Point::new(self.x, self.y, z))
         } else {
             None
         }
     }
 
-    pub fn next_cell(self, d: u8, direction: u8) -> Option<Point> {
+    pub fn next_cell(self, direction: u8) -> Option<Point<D>> {
         match direction {
-            0 => self.to_x(d, 1),
-            1 => self.to_x(d, !0),
-            2 => self.to_y(d, 1),
-            3 => self.to_y(d, !0),
-            4 => self.to_z(d, 1),
-            5 => self.to_z(d, !0),
+            0 => self.to_x(1),
+            1 => self.to_x(!0),
+            2 => self.to_y(1),
+            3 => self.to_y(!0),
+            4 => self.to_z(1),
+            5 => self.to_z(!0),
             _ => None,
         }
     }
@@ -723,127 +766,130 @@ impl AxisMap {
     }
 }
 
-impl<T: Copy> Grid3<T> {
-    pub fn new(d: u8, init: T) -> Grid3<T> {
-        let size = d as usize;
+impl<T: Copy, D: DSize> Grid3<T, D> {
+    pub fn new(init: T) -> Grid3<T, D> {
+        let size = D::SIZE as usize;
         Grid3 {
-            d,
             data: vec![init; size * size * size],
+            _phantom: PhantomData,
         }
     }
 }
 
-impl<T> Grid3<T> {
+impl<T, D: DSize> Grid3<T, D> {
     #[inline(always)]
-    fn at(&self, p: Point) -> usize {
-        let Point(x, y, z) = p;
-        let d = self.d as usize;
-        let x = x as usize;
-        let y = y as usize;
-        let z = z as usize;
+    fn at(&self, p: Point<D>) -> usize {
+        let d = D::SIZE as usize;
+        let x = p.x as usize;
+        let y = p.y as usize;
+        let z = p.z as usize;
         (x * d + y) * d + z
     }
 }
 
-impl<T> GridFront<T> {
-    pub fn from_vec(d: u8, data: Vec<T>) -> GridFront<T> {
-        GridFront { d, data }
+impl<T, D: DSize> GridFront<T, D> {
+    pub fn from_vec(data: Vec<T>) -> GridFront<T, D> {
+        GridFront {
+            data,
+            _phantom: PhantomData,
+        }
     }
 
     #[inline(always)]
-    fn at(&self, p: Point) -> usize {
-        let Point(x, _, z) = p;
-        (x * self.d + z) as usize
+    fn at(&self, p: Point<D>) -> usize {
+        (p.x * D::SIZE + p.z) as usize
     }
 }
 
-impl<T> GridRight<T> {
-    pub fn from_vec(d: u8, data: Vec<T>) -> GridRight<T> {
-        GridRight { d, data }
+impl<T, D: DSize> GridRight<T, D> {
+    pub fn from_vec(data: Vec<T>) -> GridRight<T, D> {
+        GridRight {
+            data,
+            _phantom: PhantomData,
+        }
     }
 
     #[inline(always)]
-    fn at(&self, p: Point) -> usize {
-        let Point(_, y, z) = p;
-        (z * self.d + y) as usize
+    fn at(&self, p: Point<D>) -> usize {
+        (p.z * D::SIZE + p.y) as usize
     }
 
     pub fn row(&self, z: usize) -> &[T] {
-        let d = self.d as usize;
+        let d = D::SIZE as usize;
         &self.data[z * d..(z + 1) * d]
     }
 }
 
-impl<T> Index<Point> for Grid3<T> {
+impl<T, D: DSize> Index<Point<D>> for Grid3<T, D> {
     type Output = T;
-    fn index(&self, p: Point) -> &T {
+    fn index(&self, p: Point<D>) -> &T {
         unsafe { self.data.get_unchecked(self.at(p)) }
     }
 }
 
-impl<T> IndexMut<Point> for Grid3<T> {
-    fn index_mut(&mut self, p: Point) -> &mut T {
+impl<T, D: DSize> IndexMut<Point<D>> for Grid3<T, D> {
+    fn index_mut(&mut self, p: Point<D>) -> &mut T {
         let i = self.at(p);
         unsafe { self.data.get_unchecked_mut(i) }
     }
 }
 
-impl<T> Index<Point> for GridFront<T> {
+impl<T, D: DSize> Index<Point<D>> for GridFront<T, D> {
     type Output = T;
-    fn index(&self, p: Point) -> &T {
+    fn index(&self, p: Point<D>) -> &T {
         unsafe { self.data.get_unchecked(self.at(p)) }
     }
 }
 
-impl<T> IndexMut<Point> for GridFront<T> {
-    fn index_mut(&mut self, p: Point) -> &mut T {
+impl<T, D: DSize> IndexMut<Point<D>> for GridFront<T, D> {
+    fn index_mut(&mut self, p: Point<D>) -> &mut T {
         let i = self.at(p);
         unsafe { self.data.get_unchecked_mut(i) }
     }
 }
 
-impl<T> Index<Point> for GridRight<T> {
+impl<T, D: DSize> Index<Point<D>> for GridRight<T, D> {
     type Output = T;
-    fn index(&self, p: Point) -> &T {
+    fn index(&self, p: Point<D>) -> &T {
         unsafe { self.data.get_unchecked(self.at(p)) }
     }
 }
 
-impl<T> IndexMut<Point> for GridRight<T> {
-    fn index_mut(&mut self, p: Point) -> &mut T {
+impl<T, D: DSize> IndexMut<Point<D>> for GridRight<T, D> {
+    fn index_mut(&mut self, p: Point<D>) -> &mut T {
         let i = self.at(p);
         unsafe { self.data.get_unchecked_mut(i) }
     }
 }
 
-impl<T> Index<(u8, u8)> for GridFront<T> {
+impl<T, D: DSize> Index<(u8, u8)> for GridFront<T, D> {
     type Output = T;
     fn index(&self, p: (u8, u8)) -> &T {
-        let i = (p.0 * self.d + p.1) as usize;
+        let i = (p.0 * D::SIZE + p.1) as usize;
         unsafe { self.data.get_unchecked(i) }
     }
 }
 
-impl<T> IndexMut<(u8, u8)> for GridFront<T> {
+impl<T, D: DSize> IndexMut<(u8, u8)> for GridFront<T, D> {
     fn index_mut(&mut self, p: (u8, u8)) -> &mut T {
-        let i = (p.0 * self.d + p.1) as usize;
+        let i = (p.0 * D::SIZE + p.1) as usize;
         unsafe { self.data.get_unchecked_mut(i) }
     }
 }
 
-impl<T> Index<(u8, u8)> for GridRight<T> {
+impl<T, D: DSize> Index<(u8, u8)> for GridRight<T, D> {
     type Output = T;
     fn index(&self, p: (u8, u8)) -> &T {
         let (y, z) = p;
-        let i = (z * self.d + y) as usize;
+        let i = (z * D::SIZE + y) as usize;
         unsafe { self.data.get_unchecked(i) }
     }
 }
 
-impl<T> IndexMut<(u8, u8)> for GridRight<T> {
+impl<T, D: DSize> IndexMut<(u8, u8)> for GridRight<T, D> {
     fn index_mut(&mut self, p: (u8, u8)) -> &mut T {
         let (y, z) = p;
-        let i = (z * self.d + y) as usize;
+        let i = (z * D::SIZE + y) as usize;
         unsafe { self.data.get_unchecked_mut(i) }
     }
 }

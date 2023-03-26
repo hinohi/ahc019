@@ -1,17 +1,17 @@
-use crate::Point;
+use crate::{DSize, Point};
 use rand::Rng;
 use rand_pcg::Mcg128Xsl64;
 
 #[derive(Clone)]
-pub struct BlockSet {
-    pub shared: Vec<(u16, Vec<Point>, Vec<Point>)>,
+pub struct BlockSet<D> {
+    pub shared: Vec<(u16, Vec<Point<D>>, Vec<Point<D>>)>,
     shared_id_stock: Vec<u16>,
-    pub half1: Vec<Point>,
-    pub half2: Vec<Point>,
+    pub half1: Vec<Point<D>>,
+    pub half2: Vec<Point<D>>,
     next_half_id: u16,
 }
 
-impl Default for BlockSet {
+impl<D> Default for BlockSet<D> {
     fn default() -> Self {
         BlockSet {
             shared: Vec::new(),
@@ -23,8 +23,8 @@ impl Default for BlockSet {
     }
 }
 
-impl BlockSet {
-    pub fn new() -> BlockSet {
+impl<D: DSize> BlockSet<D> {
+    pub fn new() -> BlockSet<D> {
         Default::default()
     }
 
@@ -58,22 +58,22 @@ impl BlockSet {
         id
     }
 
-    pub fn push_shared(&mut self, block_id: u16, p1: Vec<Point>, p2: Vec<Point>) {
+    pub fn push_shared(&mut self, block_id: u16, p1: Vec<Point<D>>, p2: Vec<Point<D>>) {
         self.shared.push((block_id, p1, p2));
     }
 
-    fn pop_shared(&mut self, i: usize) -> (Vec<Point>, Vec<Point>) {
+    fn pop_shared(&mut self, i: usize) -> (Vec<Point<D>>, Vec<Point<D>>) {
         let (id, s1, s2) = self.shared.swap_remove(i);
         self.shared_id_stock.push(id);
         (s1, s2)
     }
 
-    pub fn pop_random(&mut self, rng: &mut Mcg128Xsl64) -> (Vec<Point>, Vec<Point>) {
+    pub fn pop_random(&mut self, rng: &mut Mcg128Xsl64) -> (Vec<Point<D>>, Vec<Point<D>>) {
         let i = rng.gen_range(0, self.shared.len());
         self.pop_shared(i)
     }
 
-    pub fn pop_small(&mut self, th: usize) -> Option<(Vec<Point>, Vec<Point>)> {
+    pub fn pop_small(&mut self, th: usize) -> Option<(Vec<Point<D>>, Vec<Point<D>>)> {
         for i in 0..self.shared.len() {
             if self.shared[i].1.len() <= th {
                 return Some(self.pop_shared(i));
@@ -82,7 +82,7 @@ impl BlockSet {
         None
     }
 
-    pub fn push_half(&mut self, place: u8, p: Point) {
+    pub fn push_half(&mut self, place: u8, p: Point<D>) {
         if place == 1 {
             self.half1.push(p);
         } else {

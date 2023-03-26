@@ -1,21 +1,20 @@
-use crate::{AxisMap, BlockSet, Grid3, GridFront, GridRight, McParams, Point};
+use crate::{AxisMap, BlockSet, DSize, Grid3, GridFront, GridRight, McParams, Point};
 use rand::{seq::SliceRandom, Rng};
 use rand_pcg::Mcg128Xsl64;
 use smallvec::{smallvec, SmallVec};
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct GridBox {
-    d: u8,
-    grid: Grid3<u16>,
-    front: GridFront<u8>,
-    right: GridRight<u8>,
+pub struct GridBox<D> {
+    grid: Grid3<u16, D>,
+    front: GridFront<u8, D>,
+    right: GridRight<u8, D>,
 }
 
-pub struct YetPointSet {
-    yet_yet: SmallVec<[Point; 128]>,
-    yet: SmallVec<[Point; 16]>,
-    can: SmallVec<[Point; 16]>,
+pub struct YetPointSet<D> {
+    yet_yet: SmallVec<[Point<D>; 128]>,
+    yet: SmallVec<[Point<D>; 16]>,
+    can: SmallVec<[Point<D>; 16]>,
 }
 
 pub type HoleXZYY = (u8, u8, Vec<u8>);
@@ -44,14 +43,14 @@ pub fn make_face(shadow: &[Vec<u8>], t: bool) -> Vec<u8> {
     v
 }
 
-impl GridBox {
-    pub fn new(d: u8, front: &[Vec<u8>], right: &[Vec<u8>]) -> GridBox {
-        let mut grid = Grid3::new(d, 0);
-        let front = GridFront::from_vec(d, make_face(front, false));
-        let right = GridRight::from_vec(d, make_face(right, true));
-        for x in 0..d {
-            for y in 0..d {
-                for z in 0..d {
+impl<D: DSize> GridBox<D> {
+    pub fn new(front: &[Vec<u8>], right: &[Vec<u8>]) -> GridBox<D> {
+        let mut grid = Grid3::new(0);
+        let front = GridFront::from_vec(make_face(front, false));
+        let right = GridRight::from_vec(make_face(right, true));
+        for x in 0..D::SIZE {
+            for y in 0..D::SIZE {
+                for z in 0..D::SIZE {
                     let p = Point::new(x, y, z);
                     if front[p] == !0 || right[p] == !0 {
                         grid[p] = !0;
@@ -59,12 +58,7 @@ impl GridBox {
                 }
             }
         }
-        GridBox {
-            d,
-            grid,
-            front,
-            right,
-        }
+        GridBox { grid, front, right }
     }
 
     pub fn reset(&mut self, hole: &Hole) {
@@ -109,8 +103,8 @@ impl GridBox {
 
     pub fn make_hole_xzy(&self) -> Vec<HoleXZYY> {
         let mut v = Vec::new();
-        for x in 0..self.d {
-            for z in 0..self.d {
+        for x in 0..D::SIZE {
+            for z in 0..D::SIZE {
                 let front = self.front[(x, z)];
                 if front == !0 {
                     continue;
@@ -130,7 +124,7 @@ impl GridBox {
         v
     }
 
-    pub fn make_yet_points(&self, hole: &[HoleXZYY]) -> YetPointSet {
+    pub fn make_yet_points(&self, hole: &[HoleXZYY]) -> YetPointSet<D> {
         let mut yet_yet = SmallVec::new();
         let mut yet = SmallVec::new();
         let mut can = SmallVec::new();
@@ -159,13 +153,13 @@ impl GridBox {
         YetPointSet { yet_yet, yet, can }
     }
 
-    pub fn put(&mut self, p: Point, block_id: u16) {
+    pub fn put(&mut self, p: Point<D>, block_id: u16) {
         self.grid[p] = block_id;
         self.front[p] += 1;
         self.right[p] += 1;
     }
 
-    pub fn remove(&mut self, p: Point) {
+    pub fn remove(&mut self, p: Point<D>) {
         debug_assert_ne!(self.grid[p], 0);
         debug_assert!(self.front[p] > 0);
         debug_assert!(self.right[p] > 0);
@@ -175,12 +169,12 @@ impl GridBox {
     }
 }
 
-impl YetPointSet {
+impl<D: DSize> YetPointSet<D> {
     pub fn satisfied(&self) -> bool {
         self.yet_yet.is_empty() && self.yet.is_empty()
     }
 
-    pub fn chose(&self, rng: &mut Mcg128Xsl64) -> Option<Point> {
+    pub fn chose(&self, rng: &mut Mcg128Xsl64) -> Option<Point<D>> {
         if !self.yet_yet.is_empty() {
             Some(*self.yet_yet.choose(rng).unwrap())
         } else if !self.yet.is_empty() {
@@ -193,15 +187,14 @@ impl YetPointSet {
     }
 }
 
-fn grow_shared_block(
+fn grow_shared_block<D: DSize>(
     rng: &mut Mcg128Xsl64,
-    grid_1: &mut GridBox,
-    grid_2: &mut GridBox,
+    grid_1: &mut GridBox<D>,
+    grid_2: &mut GridBox<D>,
     block_id: u16,
-    p1: Point,
-    p2: Point,
-) -> (Vec<Point>, Vec<Point>) {
-    let d = grid_1.d;
+    p1: Point<D>,
+    p2: Point<D>,
+) -> (Vec<Point<D>>, Vec<Point<D>>) {
     let mut directions1 = [0, 1, 2, 3, 4, 5];
     let mut directions2 = [0, 1, 2, 3, 4, 5];
     directions1.shuffle(rng);
@@ -216,12 +209,12 @@ fn grow_shared_block(
     pp2.push(p2);
     while let Some((p1, p2)) = stack.pop() {
         for &dir1 in directions1.iter() {
-            if let Some(p1) = p1.next_cell(d, dir1) {
+            if let Some(p1) = p1.next_cell(dir1) {
                 if grid_1.grid[p1] != 0 {
                     continue;
                 }
                 for dir2 in axis_map.map_axis(dir1, directions2) {
-                    if let Some(p2) = p2.next_cell(d, dir2) {
+                    if let Some(p2) = p2.next_cell(dir2) {
                         if grid_2.grid[p2] == 0 {
                             grid_1.put(p1, block_id);
                             grid_2.put(p2, block_id);
@@ -239,19 +232,19 @@ fn grow_shared_block(
     (pp1, pp2)
 }
 
-fn fill_all(
+fn fill_all<D: DSize>(
     rng: &mut Mcg128Xsl64,
     hole_1: &[HoleXZYY],
     hole_2: &[HoleXZYY],
-    grid_1: &mut GridBox,
-    grid_2: &mut GridBox,
-    block: &mut BlockSet,
+    grid_1: &mut GridBox<D>,
+    grid_2: &mut GridBox<D>,
+    block: &mut BlockSet<D>,
     cut_off: f64,
 ) -> Option<f64> {
-    fn single_update_loop(
-        grid: &mut GridBox,
-        p: Point,
-        block: &mut BlockSet,
+    fn single_update_loop<D: DSize>(
+        grid: &mut GridBox<D>,
+        p: Point<D>,
+        block: &mut BlockSet<D>,
         cut_off: f64,
         place: u8,
     ) -> f64 {
@@ -265,7 +258,7 @@ fn fill_all(
         block.push_half(place, p);
         'OUT: while let Some(p) = stack.pop() {
             for dir in 0..6 {
-                if let Some(p) = p.next_cell(grid.d, dir) {
+                if let Some(p) = p.next_cell(dir) {
                     if grid.grid[p] == 0 {
                         grid.put(p, block_id);
                         block.push_half(place, p);
@@ -312,15 +305,15 @@ fn fill_all(
     Some(score)
 }
 
-pub fn mc_run(
+pub fn mc_run<D: DSize>(
     start: Instant,
     limit: Duration,
     rng: &mut Mcg128Xsl64,
     hole_1: &Hole,
     hole_2: &Hole,
-    grid_1: &mut GridBox,
-    grid_2: &mut GridBox,
-    block: &mut BlockSet,
+    grid_1: &mut GridBox<D>,
+    grid_2: &mut GridBox<D>,
+    block: &mut BlockSet<D>,
     best: &mut SolveResult,
     params: McParams,
 ) -> u32 {
@@ -385,7 +378,7 @@ pub fn mc_run(
             .unwrap_or(1e100);
         if new_score < score {
             score = new_score;
-            best.set_best(grid_1, grid_2, score);
+            best.set_best(&grid_1.grid.data, &grid_2.grid.data, score);
             need_erase = true;
         } else {
             *grid_1 = before_state.0;
@@ -423,10 +416,10 @@ impl SolveResult {
         }
     }
 
-    pub fn set_best(&mut self, g1: &GridBox, g2: &GridBox, score: f64) -> bool {
+    pub fn set_best(&mut self, g1: &[u16], g2: &[u16], score: f64) -> bool {
         if score < self.score {
-            self.g1 = g1.grid.data.clone();
-            self.g2 = g2.grid.data.clone();
+            self.g1 = g1.to_vec();
+            self.g2 = g2.to_vec();
             self.score = score;
             true
         } else {
@@ -435,9 +428,9 @@ impl SolveResult {
     }
 }
 
-pub fn mc_solve(rng: &mut Mcg128Xsl64, input: &SolveInput, d: u8) -> SolveResult {
-    let mut grid_1 = GridBox::new(d, &input.front1, &input.right1);
-    let mut grid_2 = GridBox::new(d, &input.front2, &input.right2);
+fn specific_mc_solve<D: DSize>(rng: &mut Mcg128Xsl64, input: &SolveInput) -> SolveResult {
+    let mut grid_1 = GridBox::<D>::new(&input.front1, &input.right1);
+    let mut grid_2 = GridBox::<D>::new(&input.front2, &input.right2);
     let hole_1 = grid_1.make_hole();
     let hole_2 = grid_2.make_hole();
     let mut block = BlockSet::new();
@@ -468,4 +461,21 @@ pub fn mc_solve(rng: &mut Mcg128Xsl64, input: &SolveInput, d: u8) -> SolveResult
         best.run_count += step;
     }
     best
+}
+
+pub fn mc_solve(rng: &mut Mcg128Xsl64, input: &SolveInput, d: u8) -> SolveResult {
+    use crate::grid::d::*;
+    match d {
+        5 => specific_mc_solve::<U5>(rng, &input),
+        6 => specific_mc_solve::<U6>(rng, &input),
+        7 => specific_mc_solve::<U7>(rng, &input),
+        8 => specific_mc_solve::<U8>(rng, &input),
+        9 => specific_mc_solve::<U9>(rng, &input),
+        10 => specific_mc_solve::<U10>(rng, &input),
+        11 => specific_mc_solve::<U11>(rng, &input),
+        12 => specific_mc_solve::<U12>(rng, &input),
+        13 => specific_mc_solve::<U13>(rng, &input),
+        14 => specific_mc_solve::<U14>(rng, &input),
+        _ => unreachable!(),
+    }
 }
