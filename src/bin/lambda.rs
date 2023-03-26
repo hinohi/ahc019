@@ -8,9 +8,8 @@ use std::time::{Duration, Instant};
 struct Request {
     seed: u64,
     d: usize,
-    mc_run: u64,
     erase_small_th: usize,
-    erase_shared_p: f64,
+    erase_big_p: f64,
 }
 
 #[derive(Serialize)]
@@ -37,9 +36,8 @@ async fn func(event: LambdaEvent<Request>) -> Result<Response, Error> {
     // 近似的にここで測る
     let start = Instant::now();
     let params = McParams {
-        mc_run: event.payload.mc_run,
         erase_small_th: event.payload.erase_small_th,
-        erase_shared_p: event.payload.erase_shared_p,
+        erase_big_p: event.payload.erase_big_p,
     };
     let input = SolveInput {
         start,

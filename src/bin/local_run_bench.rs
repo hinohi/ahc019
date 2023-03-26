@@ -26,8 +26,7 @@ fn main() {
             14 => 40,
             _ => unreachable!(),
         },
-        mc_run: 1,
-        erase_shared_p: 0.8,
+        erase_big_p: 0.3,
     };
     let input = SolveInput {
         start,
@@ -40,5 +39,6 @@ fn main() {
     };
     let mut rng = Mcg128Xsl64::new(3456);
     let result = mc_solve(&mut rng, &input, d);
+    eprintln!("{}", result.best_update_count);
     println!("{}\t{}", (result.run_count as f64).ln(), result.score.ln());
 }
