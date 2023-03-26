@@ -18,6 +18,7 @@ fn main() {
         max_temperature: 0.5,
         mc_run: 1,
         min_temperature: 1e-8,
+        erase_shared_p: 0.0,
     };
     let input = SolveInput {
         start,

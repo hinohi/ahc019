@@ -327,7 +327,7 @@ pub fn sa_run(
         }
         let before_state = (grid_1.clone(), grid_2.clone(), block.clone());
 
-        if !block.shared.is_empty() {
+        if !block.shared.is_empty() && rng.gen_bool(params.erase_shared_p) {
             let (p1, p2) = block.pop_random(rng);
             for p in p1 {
                 grid_1.remove(p);

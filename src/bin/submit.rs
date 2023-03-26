@@ -38,6 +38,7 @@ fn get_params(d: u8) -> McParams {
             max_temperature: 2.424978521005016,
             mc_run: 71,
             min_temperature: 1e-8,
+            erase_shared_p: 0.0,
         },
         6 => McParams {
             cut_off: 8.255809235452936,
@@ -45,6 +46,7 @@ fn get_params(d: u8) -> McParams {
             max_temperature: 0.12783905726356284,
             mc_run: 89,
             min_temperature: 1e-8,
+            erase_shared_p: 0.0,
         },
         7 => McParams {
             cut_off: 8.498373594249625,
@@ -52,6 +54,7 @@ fn get_params(d: u8) -> McParams {
             max_temperature: 14.592163756296676,
             mc_run: 50,
             min_temperature: 1e-8,
+            erase_shared_p: 0.0,
         },
         8 => McParams {
             cut_off: 3.1732947086447654,
@@ -59,6 +62,7 @@ fn get_params(d: u8) -> McParams {
             max_temperature: 0.10302552733534334,
             mc_run: 28,
             min_temperature: 1e-8,
+            erase_shared_p: 0.0,
         },
         9 => McParams {
             cut_off: 0.50137301000144,
@@ -66,6 +70,7 @@ fn get_params(d: u8) -> McParams {
             max_temperature: 22.064939273483084,
             mc_run: 14,
             min_temperature: 1e-8,
+            erase_shared_p: 0.0,
         },
         10 => McParams {
             cut_off: 2.4754740521591696,
@@ -73,6 +78,7 @@ fn get_params(d: u8) -> McParams {
             max_temperature: 1.5483427427216714,
             mc_run: 6,
             min_temperature: 1e-8,
+            erase_shared_p: 0.0,
         },
         11 => McParams {
             cut_off: 7.02960251174804,
@@ -80,6 +86,7 @@ fn get_params(d: u8) -> McParams {
             max_temperature: 0.051489579282792755,
             mc_run: 73,
             min_temperature: 1e-8,
+            erase_shared_p: 0.0,
         },
         12 => McParams {
             cut_off: 3.0213848130509273,
@@ -87,6 +94,7 @@ fn get_params(d: u8) -> McParams {
             max_temperature: 0.2017942454490659,
             mc_run: 3,
             min_temperature: 1e-8,
+            erase_shared_p: 0.0,
         },
         13 => McParams {
             cut_off: 1.371846843990141,
@@ -94,6 +102,7 @@ fn get_params(d: u8) -> McParams {
             max_temperature: 0.12853438018592478,
             mc_run: 11,
             min_temperature: 1e-8,
+            erase_shared_p: 0.0,
         },
         14 => McParams {
             cut_off: 2.520969159388388,
@@ -101,6 +110,7 @@ fn get_params(d: u8) -> McParams {
             max_temperature: 0.2005563105195312,
             mc_run: 6,
             min_temperature: 1e-8,
+            erase_shared_p: 0.0,
         },
         _ => unreachable!(),
     }

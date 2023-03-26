@@ -12,6 +12,7 @@ struct Request {
     max_temperature: f64,
     min_temperature: f64,
     erase_small_th: usize,
+    erase_shared_p: f64,
     cut_off: f64,
 }
 
@@ -43,6 +44,7 @@ async fn func(event: LambdaEvent<Request>) -> Result<Response, Error> {
         max_temperature: event.payload.max_temperature,
         min_temperature: event.payload.min_temperature,
         erase_small_th: event.payload.erase_small_th,
+        erase_shared_p: event.payload.erase_shared_p,
         cut_off: event.payload.cut_off,
     };
     let input = SolveInput {

@@ -17,6 +17,7 @@ class Args:
     max_temperature: float
     min_temperature: float
     erase_small_th: int
+    erase_shared_p: float
     cut_off: float
 
 
@@ -30,6 +31,7 @@ def calc_score(args: Args) -> tuple[float, float, float]:
             'max_temperature': args.max_temperature,
             'min_temperature': args.min_temperature,
             'erase_small_th': args.erase_small_th,
+            'erase_shared_p': args.erase_shared_p,
             'cut_off': args.cut_off,
         })
 

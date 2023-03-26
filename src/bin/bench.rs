@@ -33,6 +33,7 @@ fn main() {
             max_temperature: 0.5,
             min_temperature: 1e-8,
             erase_small_th: 10,
+            erase_shared_p: 0.0,
             cut_off: 3.0,
         };
         let intput = SolveInput {

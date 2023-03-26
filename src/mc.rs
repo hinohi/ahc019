@@ -6,6 +6,7 @@ pub struct McParams {
     pub max_temperature: f64,
     pub min_temperature: f64,
     pub erase_small_th: usize,
+    pub erase_shared_p: f64,
     pub cut_off: f64,
 }
 
