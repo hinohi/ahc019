@@ -12,6 +12,6 @@ pub struct McParams {
 impl McParams {
     pub fn temperature(&self, limit: Duration, elapsed: Duration) -> f64 {
         let t = elapsed.as_secs_f64() / limit.as_secs_f64();
-        self.max_temperature.powf(t) * self.min_temperature.powf(1.0 - t)
+        self.max_temperature.powf(1.0 - t) * self.min_temperature.powf(t)
     }
 }
