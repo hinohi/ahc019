@@ -28,6 +28,11 @@ fn main() {
             front2: [Bytes; d],
             right2: [Bytes; d],
         }
+        let mut params = McParams::opt(d);
+        params.mc_run /= 6;
+        if params.mc_run == 0 {
+            params.mc_run = 1;
+        }
         let intput = SolveInput {
             start: Instant::now(),
             limit: Duration::from_millis(1000),
@@ -35,7 +40,7 @@ fn main() {
             right1,
             front2,
             right2,
-            params: McParams::opt(d),
+            params,
         };
         let r = mc_solve(&mut rng, &intput, d);
         assert!(r.g1.len() < 10000);

@@ -12,6 +12,8 @@ fn main() {
         front2: [Bytes; d],
         right2: [Bytes; d],
     }
+    let mut params = McParams::opt(d);
+    params.mc_run = 1;
     let input = SolveInput {
         start,
         limit: Duration::from_millis(200),
