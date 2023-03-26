@@ -282,33 +282,20 @@ pub fn sa_run(
     start: Instant,
     limit: Duration,
     rng: &mut Mcg128Xsl64,
-    d: u8,
-    front1: &[Vec<u8>],
-    right1: &[Vec<u8>],
-    front2: &[Vec<u8>],
-    right2: &[Vec<u8>],
+    hole_1: &[Hole],
+    hole_2: &[Hole],
+    grid_1: &mut GridBox,
+    grid_2: &mut GridBox,
+    block: &mut BlockSet,
     params: McParams,
 ) -> ((Vec<u16>, Vec<u16>, f64), u32) {
-    let mut grid_1 = GridBox::new(d, &front1, right1);
-    let mut grid_2 = GridBox::new(d, &front2, right2);
-    let hole_1 = grid_1.make_hole_xzy();
-    let hole_2 = grid_2.make_hole_xzy();
-    let mut block = BlockSet::new();
     let mut best = loop {
-        if let Some(score) = fill_all(
-            rng,
-            &hole_1,
-            &hole_2,
-            &mut grid_1,
-            &mut grid_2,
-            &mut block,
-            1e100,
-        ) {
-            break (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
-        }
         grid_1.reset(&hole_1);
         grid_2.reset(&hole_2);
         block.reset();
+        if let Some(score) = fill_all(rng, &hole_1, &hole_2, grid_1, grid_2, block, 1e100) {
+            break (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
+        }
     };
     let mut score = best.2;
     let mut elapsed = start.elapsed();
@@ -359,17 +346,8 @@ pub fn sa_run(
 
         let sos = block.shared_only_score();
         let cut_off = temperature * params.cut_off - sos + score;
-        let new_score = sos
-            + fill_all(
-                rng,
-                &hole_1,
-                &hole_2,
-                &mut grid_1,
-                &mut grid_2,
-                &mut block,
-                cut_off,
-            )
-            .unwrap_or(1e100);
+        let new_score =
+            sos + fill_all(rng, &hole_1, &hole_2, grid_1, grid_2, block, cut_off).unwrap_or(1e100);
         if new_score < score || rng.gen_bool(((score - new_score) / temperature).exp()) {
             score = new_score;
             if score < best.2 {
@@ -377,9 +355,9 @@ pub fn sa_run(
             }
             need_erase = true;
         } else {
-            grid_1 = before_state.0;
-            grid_2 = before_state.1;
-            block = before_state.2;
+            *grid_1 = before_state.0;
+            *grid_2 = before_state.1;
+            *block = before_state.2;
             need_erase = false;
         }
     }
@@ -426,6 +404,12 @@ pub fn mc_solve(
     right2: &[Vec<u8>],
     params: McParams,
 ) -> SolveResult {
+    let mut grid_1 = GridBox::new(d, &front1, right1);
+    let mut grid_2 = GridBox::new(d, &front2, right2);
+    let hole_1 = grid_1.make_hole_xzy();
+    let hole_2 = grid_2.make_hole_xzy();
+    let mut block = BlockSet::new();
+
     let mut best = SolveResult::worst();
     for i in 0..params.mc_run {
         let rest_run = params.mc_run - i;
@@ -435,11 +419,11 @@ pub fn mc_solve(
             Instant::now(),
             sub_limit,
             rng,
-            d,
-            front1,
-            right1,
-            front2,
-            right2,
+            &hole_1,
+            &hole_2,
+            &mut grid_1,
+            &mut grid_2,
+            &mut block,
             params,
         );
         best.set_best(g1, g2, score, step);
