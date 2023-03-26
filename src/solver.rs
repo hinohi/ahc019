@@ -90,9 +90,9 @@ impl GridBox {
         for (x, z, yy) in hole.iter() {
             let x = *x;
             let z = *z;
-            let front = self.front.data[(x * self.d + z) as usize];
+            let front = self.front[(x, z)];
             for &y in yy.iter() {
-                let right = self.right.data[(z * self.d + y) as usize];
+                let right = self.right[(y, z)];
                 let p = Point::new(x, y, z);
                 match (front, right) {
                     (0, 0) => yet_yet.push(p),

@@ -815,3 +815,35 @@ impl<T> IndexMut<Point> for GridRight<T> {
         unsafe { self.data.get_unchecked_mut(i) }
     }
 }
+
+impl<T> Index<(u8, u8)> for GridFront<T> {
+    type Output = T;
+    fn index(&self, p: (u8, u8)) -> &T {
+        let i = (p.0 * self.d + p.1) as usize;
+        unsafe { self.data.get_unchecked(i) }
+    }
+}
+
+impl<T> IndexMut<(u8, u8)> for GridFront<T> {
+    fn index_mut(&mut self, p: (u8, u8)) -> &mut T {
+        let i = (p.0 * self.d + p.1) as usize;
+        unsafe { self.data.get_unchecked_mut(i) }
+    }
+}
+
+impl<T> Index<(u8, u8)> for GridRight<T> {
+    type Output = T;
+    fn index(&self, p: (u8, u8)) -> &T {
+        let (y, z) = p;
+        let i = (z * self.d + y) as usize;
+        unsafe { self.data.get_unchecked(i) }
+    }
+}
+
+impl<T> IndexMut<(u8, u8)> for GridRight<T> {
+    fn index_mut(&mut self, p: (u8, u8)) -> &mut T {
+        let (y, z) = p;
+        let i = (z * self.d + y) as usize;
+        unsafe { self.data.get_unchecked_mut(i) }
+    }
+}
