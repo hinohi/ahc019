@@ -32,55 +32,65 @@ fn print_ans(g1: &[u16], g2: &[u16]) {
 
 fn get_params(d: u8) -> McParams {
     match d {
+        // -0.8665073454427983
         5 => McParams {
+            erase_shared_p: 0.7641974640494824,
             erase_small_th: 5,
-            mc_run: 60,
-            erase_shared_p: 0.8425078049911343,
+            mc_run: 45,
         },
+        // -1.0465880873030173
         6 => McParams {
-            erase_small_th: 5,
-            mc_run: 60,
-            erase_shared_p: 0.8,
+            erase_shared_p: 0.5271543071699281,
+            erase_small_th: 8,
+            mc_run: 100,
         },
+        // -1.0383037291956507
         7 => McParams {
-            erase_small_th: 7,
-            mc_run: 60,
-            erase_shared_p: 0.8,
+            erase_shared_p: 0.5276321643573454,
+            erase_small_th: 11,
+            mc_run: 65,
         },
+        // -1.0700763969294835
         8 => McParams {
-            erase_small_th: 14,
-            mc_run: 58,
-            erase_shared_p: 0.5495226119501073,
+            erase_shared_p: 0.8262167169942501,
+            erase_small_th: 12,
+            mc_run: 86,
         },
+        // -1.1036122300059443
         9 => McParams {
+            erase_shared_p: 0.6772038451250363,
             erase_small_th: 17,
-            mc_run: 40,
-            erase_shared_p: 0.8,
+            mc_run: 31,
         },
+        // -1.1916639012730843
         10 => McParams {
-            erase_small_th: 20,
-            mc_run: 30,
-            erase_shared_p: 0.8,
+            erase_shared_p: 0.5750391690408527,
+            erase_small_th: 21,
+            mc_run: 56,
         },
+        // -1.0348616264530257
         11 => McParams {
-            erase_small_th: 24,
-            mc_run: 17,
-            erase_shared_p: 0.7110038338185328,
+            erase_shared_p: 0.6873535191800519,
+            erase_small_th: 30,
+            mc_run: 50,
         },
+        // -1.4303001266271784
         12 => McParams {
-            erase_small_th: 27,
-            mc_run: 18,
-            erase_shared_p: 0.75,
+            erase_shared_p: 0.8043228784487291,
+            erase_small_th: 37,
+            mc_run: 56,
         },
+        // -1.407338859035549
         13 => McParams {
-            erase_small_th: 35,
-            mc_run: 19,
-            erase_shared_p: 0.75,
+            erase_shared_p: 0.5669638180845599,
+            erase_small_th: 47,
+            mc_run: 23,
         },
+        // -1.5757117753234124
         14 => McParams {
-            erase_small_th: 43,
-            mc_run: 20,
-            erase_shared_p: 0.7639041770255723,
+            erase_shared_p: 0.7236849754072749,
+            erase_small_th: 52,
+            mc_run: 46,
         },
         _ => unreachable!(),
     }
