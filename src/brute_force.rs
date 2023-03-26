@@ -68,8 +68,9 @@ impl GridBox {
             for y in 0..self.d {
                 for z in 0..self.d {
                     let p = Point::new(x, y, z);
-                    if self.grid[p] == 0 {
-                        v.push(p);
+                    match (self.front[p], self.right[p]) {
+                        (FaceState::Yet, FaceState::Yet) => v.push(p),
+                        _ => (),
                     }
                 }
             }
@@ -125,7 +126,7 @@ fn grow_shared_block(
                 if grid_1.grid[p1] != 0 {
                     continue;
                 }
-                for dir2 in item.axis.map_axis(dir1, &[0, 1, 2, 3, 4, 5]) {
+                for dir2 in item.axis.map_axis(dir1, [0, 1, 2, 3, 4, 5]) {
                     if let Some(p2) = item.p2.next_cell(d, dir2) {
                         if grid_2.grid[p2] == 0 {
                             let axis = item.axis.fix(dir1, dir2);
@@ -163,7 +164,7 @@ pub fn solve(
         0,
     )];
     let mut best = grids[0].clone();
-    best.2 = 1.0;
+    best.2 = 0.5;
     while let Some((grid_1, grid_2, score, last_block_id)) = grids.pop() {
         if score >= best.2 {
             continue;
@@ -174,6 +175,9 @@ pub fn solve(
         for &p1 in pp1.iter() {
             for &p2 in pp2.iter() {
                 for (grid_1, grid_2, c) in grow_shared_block(&grid_1, &grid_2, block_id, p1, p2) {
+                    if c < 5 {
+                        continue;
+                    }
                     let new_score = score + 1.0 / c as f64;
                     if new_score >= best.2 {
                         continue;

@@ -1,5 +1,5 @@
-// pub mod brute_force;
 mod block_set;
+pub mod brute_force;
 mod grid;
 mod mc;
 mod solver;

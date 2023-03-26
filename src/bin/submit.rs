@@ -1,4 +1,4 @@
-use ahc019::{mc_solve, McParams};
+use ahc019::{brute_force, mc_solve, McParams};
 use proconio::{input, marker::Bytes};
 use rand_pcg::Mcg128Xsl64;
 use std::{
@@ -114,6 +114,12 @@ fn main() {
         right1: [Bytes; d],
         front2: [Bytes; d],
         right2: [Bytes; d],
+    }
+    if d == 5 {
+        let result = brute_force::solve(d, &front1, &right1, &front2, &right2);
+        eprintln!("{}", result.score);
+        print_ans(&result.g1, &result.g2);
+        return;
     }
     let params = get_params(d);
     let mut rng = Mcg128Xsl64::new(9085);
