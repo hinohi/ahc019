@@ -25,11 +25,8 @@ def main():
             n=n,
             d=d,
             mc_run=trial.suggest_int('mc_run', low=1, high=100),
-            max_temperature=trial.suggest_float('max_temperature', low=1e-7, high=1.0, log=True),
-            min_temperature=1e-8,
             erase_small_th=trial.suggest_int('erase_small_th', low=0, high=60),
             erase_shared_p=trial.suggest_float('erase_shared_p', low=0.0, high=1.0),
-            cut_off=trial.suggest_float('cut_off', low=0.5, high=10.0),
         )
         score = calc_score(score_args)
         print(score)
