@@ -1,4 +1,4 @@
-use ahc019::{mc_solve, McParams};
+use ahc019::{mc_solve, McParams, SolveInput};
 use proconio::{input, marker::Bytes};
 use rand_pcg::Mcg128Xsl64;
 use std::{
@@ -116,18 +116,17 @@ fn main() {
         right2: [Bytes; d],
     }
     let params = get_params(d);
-    let mut rng = Mcg128Xsl64::new(9085);
-    let result = mc_solve(
+    let input = SolveInput {
         start,
-        Duration::from_millis(5800),
-        &mut rng,
-        d,
-        &front1,
-        &right1,
-        &front2,
-        &right2,
+        limit: Duration::from_millis(5800),
+        front1,
+        right1,
+        front2,
+        right2,
         params,
-    );
+    };
+    let mut rng = Mcg128Xsl64::new(9085);
+    let result = mc_solve(&mut rng, &input, d);
     eprintln!("{} {}", result.run_count, result.score);
     print_ans(&result.g1, &result.g2);
 }

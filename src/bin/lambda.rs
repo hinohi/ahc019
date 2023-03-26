@@ -1,4 +1,4 @@
-use ahc019::{mc_solve, McParams};
+use ahc019::{mc_solve, McParams, SolveInput};
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use rand_pcg::Mcg128Xsl64;
 use serde::{Deserialize, Serialize};
@@ -38,30 +38,24 @@ async fn func(event: LambdaEvent<Request>) -> Result<Response, Error> {
     let input = tools::gen(event.payload.seed, Some(event.payload.d));
     // 近似的にここで測る
     let start = Instant::now();
-
-    let front1 = face_conv(&input.f[0]);
-    let right1 = face_conv(&input.r[0]);
-    let front2 = face_conv(&input.f[1]);
-    let right2 = face_conv(&input.r[1]);
-    let mut rng = Mcg128Xsl64::new(32343);
-    let scheduler = McParams {
+    let params = McParams {
         mc_run: event.payload.mc_run,
         max_temperature: event.payload.max_temperature,
         min_temperature: event.payload.min_temperature,
         erase_small_th: event.payload.erase_small_th,
         cut_off: event.payload.cut_off,
     };
-    let best = mc_solve(
+    let input = SolveInput {
         start,
-        Duration::from_millis(5800),
-        &mut rng,
-        event.payload.d as u8,
-        &front1,
-        &right1,
-        &front2,
-        &right2,
-        scheduler,
-    );
+        limit: Duration::from_millis(5800),
+        front1: face_conv(&input.f[0]),
+        right1: face_conv(&input.r[0]),
+        front2: face_conv(&input.f[1]),
+        right2: face_conv(&input.r[1]),
+        params,
+    };
+    let mut rng = Mcg128Xsl64::new(32343);
+    let best = mc_solve(&mut rng, &input, event.payload.d as u8);
 
     Ok(Response {
         request: event.payload,

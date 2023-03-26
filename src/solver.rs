@@ -354,6 +354,16 @@ pub fn sa_run(
     }
 }
 
+pub struct SolveInput {
+    pub start: Instant,
+    pub limit: Duration,
+    pub front1: Vec<Vec<u8>>,
+    pub right1: Vec<Vec<u8>>,
+    pub front2: Vec<Vec<u8>>,
+    pub right2: Vec<Vec<u8>>,
+    pub params: McParams,
+}
+
 pub struct SolveResult {
     pub g1: Vec<u16>,
     pub g2: Vec<u16>,
@@ -383,27 +393,17 @@ impl SolveResult {
     }
 }
 
-pub fn mc_solve(
-    start: Instant,
-    limit: Duration,
-    rng: &mut Mcg128Xsl64,
-    d: u8,
-    front1: &[Vec<u8>],
-    right1: &[Vec<u8>],
-    front2: &[Vec<u8>],
-    right2: &[Vec<u8>],
-    params: McParams,
-) -> SolveResult {
-    let mut grid_1 = GridBox::new(d, &front1, right1);
-    let mut grid_2 = GridBox::new(d, &front2, right2);
+pub fn mc_solve(rng: &mut Mcg128Xsl64, input: &SolveInput, d: u8) -> SolveResult {
+    let mut grid_1 = GridBox::new(d, &input.front1, &input.right1);
+    let mut grid_2 = GridBox::new(d, &input.front2, &input.right2);
     let hole_1 = grid_1.make_hole_xzy();
     let hole_2 = grid_2.make_hole_xzy();
     let mut block = BlockSet::new();
 
     let mut best = SolveResult::worst();
-    for i in 0..params.mc_run {
-        let rest_run = params.mc_run - i;
-        let total_mill = (limit - start.elapsed()).as_millis() as u64;
+    for i in 0..input.params.mc_run {
+        let rest_run = input.params.mc_run - i;
+        let total_mill = (input.limit - input.start.elapsed()).as_millis() as u64;
         let sub_limit = Duration::from_millis(total_mill / rest_run);
         let step = sa_run(
             Instant::now(),
@@ -415,7 +415,7 @@ pub fn mc_solve(
             &mut grid_2,
             &mut block,
             &mut best,
-            params,
+            input.params,
         );
         grid_1.reset(&hole_1);
         grid_2.reset(&hole_2);

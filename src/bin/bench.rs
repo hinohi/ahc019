@@ -1,4 +1,4 @@
-use ahc019::{mc_solve, McParams};
+use ahc019::{mc_solve, McParams, SolveInput};
 use proconio::{input, marker::Bytes, source::auto::AutoSource};
 use rand_pcg::Mcg128Xsl64;
 use std::time::{Duration, Instant};
@@ -35,17 +35,16 @@ fn main() {
             erase_small_th: 10,
             cut_off: 3.0,
         };
-        let r = mc_solve(
-            Instant::now(),
-            Duration::from_millis(1000),
-            &mut rng,
-            d,
-            &front1,
-            &right1,
-            &front2,
-            &right2,
+        let intput = SolveInput {
+            start: Instant::now(),
+            limit: Duration::from_millis(1000),
+            front1,
+            right1,
+            front2,
+            right2,
             params,
-        );
+        };
+        let r = mc_solve(&mut rng, &intput, d);
         assert!(r.g1.len() < 10000);
         assert!(r.g2.len() < 10000);
         assert!(r.score > 0.0);
