@@ -11,8 +11,8 @@ pub struct BlockSet {
     next_half_id: u16,
 }
 
-impl BlockSet {
-    pub fn new() -> BlockSet {
+impl Default for BlockSet {
+    fn default() -> Self {
         BlockSet {
             shared: Vec::new(),
             shared_id_stock: Vec::new(),
@@ -20,6 +20,12 @@ impl BlockSet {
             half2: Vec::new(),
             next_half_id: 10000,
         }
+    }
+}
+
+impl BlockSet {
+    pub fn new() -> BlockSet {
+        Default::default()
     }
 
     pub fn reset(&mut self) {

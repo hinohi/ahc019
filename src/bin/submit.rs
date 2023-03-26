@@ -26,8 +26,8 @@ fn print_ans(g1: &[u16], g2: &[u16]) {
         block_id_map.entry(g).or_insert(id);
     }
     println!("{}", block_id_map.len());
-    print_v(&g1, &block_id_map);
-    print_v(&g2, &block_id_map);
+    print_v(g1, &block_id_map);
+    print_v(g2, &block_id_map);
 }
 
 fn get_params(d: u8) -> McParams {

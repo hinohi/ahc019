@@ -40,8 +40,8 @@ pub fn make_face(shadow: &[Vec<u8>], t: bool) -> Vec<u8> {
 impl GridBox {
     pub fn new(d: u8, front: &[Vec<u8>], right: &[Vec<u8>]) -> GridBox {
         let mut grid = Grid3::new(d, 0);
-        let front = GridFront::from_vec(d, make_face(&front, false));
-        let right = GridRight::from_vec(d, make_face(&right, true));
+        let front = GridFront::from_vec(d, make_face(front, false));
+        let right = GridRight::from_vec(d, make_face(right, true));
         for x in 0..d {
             for y in 0..d {
                 for z in 0..d {
@@ -340,10 +340,10 @@ pub fn sa_run(
         let sos = block.shared_only_score();
         let cut_off = temperature * params.cut_off - sos + score;
         let new_score =
-            sos + fill_all(rng, &hole_1, &hole_2, grid_1, grid_2, block, cut_off).unwrap_or(1e100);
+            sos + fill_all(rng, hole_1, hole_2, grid_1, grid_2, block, cut_off).unwrap_or(1e100);
         if new_score < score || rng.gen_bool(((score - new_score) / temperature).exp()) {
             score = new_score;
-            best.set_best(&grid_1, &grid_2, score);
+            best.set_best(grid_1, grid_2, score);
             need_erase = true;
         } else {
             *grid_1 = before_state.0;
