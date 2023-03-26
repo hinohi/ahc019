@@ -28,7 +28,7 @@ impl Point {
         Point(x, y, z)
     }
 
-    pub fn to_x(self, d: u8, dx: u8) -> Option<Point> {
+    fn to_x(self, d: u8, dx: u8) -> Option<Point> {
         let x = self.0.wrapping_add(dx);
         if x < d {
             Some(Point(x, self.1, self.2))
@@ -37,7 +37,7 @@ impl Point {
         }
     }
 
-    pub fn to_y(self, d: u8, dy: u8) -> Option<Point> {
+    fn to_y(self, d: u8, dy: u8) -> Option<Point> {
         let y = self.1.wrapping_add(dy);
         if y < d {
             Some(Point(self.0, y, self.2))
@@ -46,7 +46,7 @@ impl Point {
         }
     }
 
-    pub fn to_z(self, d: u8, dz: u8) -> Option<Point> {
+    fn to_z(self, d: u8, dz: u8) -> Option<Point> {
         let z = self.2.wrapping_add(dz);
         if z < d {
             Some(Point(self.0, self.1, z))

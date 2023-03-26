@@ -25,7 +25,7 @@ def calc_score(args: Args) -> tuple[float, float, float]:
     tasks = []
     for seed in range(args.n):
         tasks.append({
-            'seed': seed + 1,
+            'seed': seed + 1001,
             'd': args.d,
             'mc_run': args.mc_run,
             'max_temperature': args.max_temperature,

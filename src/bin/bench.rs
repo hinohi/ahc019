@@ -31,7 +31,7 @@ fn main() {
         let params = McParams {
             mc_run: 1,
             erase_small_th: 10,
-            erase_shared_p: 0.0,
+            erase_shared_p: 0.9,
         };
         let intput = SolveInput {
             start: Instant::now(),
