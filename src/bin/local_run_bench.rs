@@ -13,12 +13,9 @@ fn main() {
         right2: [Bytes; d],
     }
     let params = McParams {
-        cut_off: 3.0,
         erase_small_th: d as usize,
-        max_temperature: 0.5,
         mc_run: 1,
-        min_temperature: 1e-8,
-        erase_shared_p: 0.0,
+        erase_shared_p: 0.8,
     };
     let input = SolveInput {
         start,

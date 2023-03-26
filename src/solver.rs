@@ -278,7 +278,7 @@ fn fill_all(
     Some(score)
 }
 
-pub fn sa_run(
+pub fn mc_run(
     start: Instant,
     limit: Duration,
     rng: &mut Mcg128Xsl64,
@@ -304,7 +304,6 @@ pub fn sa_run(
         if elapsed > limit {
             break step;
         }
-        let temperature = params.temperature(limit, elapsed);
 
         if need_erase {
             for &p in block.half1.iter() {
@@ -338,10 +337,10 @@ pub fn sa_run(
         }
 
         let sos = block.shared_only_score();
-        let cut_off = temperature * params.cut_off - sos + score;
+        let cut_off = score - sos;
         let new_score =
             sos + fill_all(rng, hole_1, hole_2, grid_1, grid_2, block, cut_off).unwrap_or(1e100);
-        if new_score < score || rng.gen_bool(((score - new_score) / temperature).exp()) {
+        if new_score < score {
             score = new_score;
             best.set_best(grid_1, grid_2, score);
             need_erase = true;
@@ -408,7 +407,7 @@ pub fn mc_solve(rng: &mut Mcg128Xsl64, input: &SolveInput, d: u8) -> SolveResult
         }
         let total_mill = (input.limit - input.start.elapsed()).as_millis() as u64;
         let sub_limit = Duration::from_millis(total_mill / rest_run);
-        let step = sa_run(
+        let step = mc_run(
             Instant::now(),
             sub_limit,
             rng,

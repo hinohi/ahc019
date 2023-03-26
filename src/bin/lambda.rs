@@ -9,11 +9,8 @@ struct Request {
     seed: u64,
     d: usize,
     mc_run: u64,
-    max_temperature: f64,
-    min_temperature: f64,
     erase_small_th: usize,
     erase_shared_p: f64,
-    cut_off: f64,
 }
 
 #[derive(Serialize)]
@@ -41,11 +38,8 @@ async fn func(event: LambdaEvent<Request>) -> Result<Response, Error> {
     let start = Instant::now();
     let params = McParams {
         mc_run: event.payload.mc_run,
-        max_temperature: event.payload.max_temperature,
-        min_temperature: event.payload.min_temperature,
         erase_small_th: event.payload.erase_small_th,
         erase_shared_p: event.payload.erase_shared_p,
-        cut_off: event.payload.cut_off,
     };
     let input = SolveInput {
         start,
