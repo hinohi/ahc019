@@ -13,7 +13,19 @@ fn main() {
         right2: [Bytes; d],
     }
     let params = McParams {
-        erase_small_th: d as usize,
+        erase_small_th: match d {
+            5 => 5,
+            6 => 5,
+            7 => 8,
+            8 => 14,
+            9 => 17,
+            10 => 20,
+            11 => 25,
+            12 => 30,
+            13 => 35,
+            14 => 40,
+            _ => unreachable!(),
+        },
         mc_run: 1,
         erase_shared_p: 0.8,
     };
