@@ -27,7 +27,14 @@ pub struct Hole {
     pub right: Vec<usize>,
 }
 
-pub fn make_face(shadow: &[Vec<u8>], t: bool) -> Vec<u8> {
+#[derive(Clone)]
+pub struct GridSystem {
+    grid_1: GridBox,
+    grid_2: GridBox,
+    block: BlockSet,
+}
+
+fn make_face(shadow: &[Vec<u8>], t: bool) -> Vec<u8> {
     let d = shadow.len();
     let mut v = vec![!0; d * d];
     for (i, row) in shadow.iter().enumerate() {
@@ -193,16 +200,43 @@ impl YetPointSet {
     }
 }
 
-fn grow_shared_block(
-    rng: &mut Mcg128Xsl64,
-    grid_1: &mut GridBox,
-    grid_2: &mut GridBox,
-    block: &mut BlockSet,
-    p1: Point,
-    p2: Point,
-) -> f64 {
-    let block_id = block.gen_shared_block_id();
-    let d = grid_1.d;
+impl GridSystem {
+    pub fn erase_half(&mut self, erase_small_th: usize) {
+        for &p in self.block.half1.iter() {
+            self.grid_1.remove(p);
+        }
+        for &p in self.block.half2.iter() {
+            self.grid_2.remove(p);
+        }
+        self.block.half_reset();
+        if erase_small_th > 0 {
+            while let Some((p1, p2)) = self.block.pop_small(erase_small_th) {
+                for p in p1 {
+                    self.grid_1.remove(p);
+                }
+                for p in p2 {
+                    self.grid_2.remove(p);
+                }
+            }
+        }
+    }
+
+    pub fn erase_shared(&mut self, rng: &mut Mcg128Xsl64, erase_shared_p: f64) {
+        if !self.block.shared.is_empty() && rng.gen_bool(erase_shared_p) {
+            let (p1, p2) = self.block.pop_random(rng);
+            for p in p1 {
+                self.grid_1.remove(p);
+            }
+            for p in p2 {
+                self.grid_2.remove(p);
+            }
+        }
+    }
+}
+
+fn grow_shared_block(rng: &mut Mcg128Xsl64, grid: &mut GridSystem, p1: Point, p2: Point) -> f64 {
+    let block_id = grid.block.gen_shared_block_id();
+    let d = grid.grid_1.d;
     let mut directions1 = [0, 1, 2, 3, 4, 5];
     let mut directions2 = [0, 1, 2, 3, 4, 5];
     directions1.shuffle(rng);
@@ -211,21 +245,21 @@ fn grow_shared_block(
     let mut pp1 = Vec::with_capacity(4);
     let mut pp2 = Vec::with_capacity(4);
     let mut stack: SmallVec<[_; 32]> = smallvec![(p1, p2)];
-    grid_1.put(p1, block_id);
-    grid_2.put(p2, block_id);
+    grid.grid_1.put(p1, block_id);
+    grid.grid_2.put(p2, block_id);
     pp1.push(p1);
     pp2.push(p2);
     while let Some((p1, p2)) = stack.pop() {
         for &dir1 in directions1.iter() {
             if let Some(p1) = p1.next_cell(d, dir1) {
-                if grid_1.grid[p1] != 0 {
+                if grid.grid_1.grid[p1] != 0 {
                     continue;
                 }
                 for dir2 in axis_map.map_axis(dir1, directions2) {
                     if let Some(p2) = p2.next_cell(d, dir2) {
-                        if grid_2.grid[p2] == 0 {
-                            grid_1.put(p1, block_id);
-                            grid_2.put(p2, block_id);
+                        if grid.grid_2.grid[p2] == 0 {
+                            grid.grid_1.put(p1, block_id);
+                            grid.grid_2.put(p2, block_id);
                             pp1.push(p1);
                             pp2.push(p2);
                             axis_map = axis_map.fix(dir1, dir2);
@@ -238,7 +272,7 @@ fn grow_shared_block(
         }
     }
     let size = pp1.len();
-    block.push_shared(block_id, pp1, pp2);
+    grid.block.push_shared(block_id, pp1, pp2);
     1.0 / size as f64
 }
 
@@ -246,9 +280,7 @@ fn fill_all(
     rng: &mut Mcg128Xsl64,
     hole_1: &[HoleXZYY],
     hole_2: &[HoleXZYY],
-    grid_1: &mut GridBox,
-    grid_2: &mut GridBox,
-    block: &mut BlockSet,
+    grid: &mut GridSystem,
     cut_off: f64,
 ) -> Option<f64> {
     fn single_update_loop(
@@ -289,8 +321,8 @@ fn fill_all(
         if score >= cut_off {
             return None;
         }
-        let yet1 = grid_1.make_yet_points(hole_1);
-        let yet2 = grid_2.make_yet_points(hole_2);
+        let yet1 = grid.grid_1.make_yet_points(hole_1);
+        let yet2 = grid.grid_2.make_yet_points(hole_2);
         if yet1.satisfied() && yet2.satisfied() {
             break;
         }
@@ -298,13 +330,15 @@ fn fill_all(
         let p2 = yet2.chose(rng);
         match (p1, p2) {
             (Some(p1), Some(p2)) => {
-                score += grow_shared_block(rng, grid_1, grid_2, block, p1, p2);
+                score += grow_shared_block(rng, grid, p1, p2);
             }
             (Some(p), None) => {
-                score += single_update_loop(grid_1, p, block, cut_off - score, 1);
+                score +=
+                    single_update_loop(&mut grid.grid_1, p, &mut grid.block, cut_off - score, 1);
             }
             (None, Some(p)) => {
-                score += single_update_loop(grid_2, p, block, cut_off - score, 2);
+                score +=
+                    single_update_loop(&mut grid.grid_2, p, &mut grid.block, cut_off - score, 2);
             }
             (None, None) => return None,
         }
@@ -318,9 +352,7 @@ pub fn mc_run(
     rng: &mut Mcg128Xsl64,
     hole_1: &Hole,
     hole_2: &Hole,
-    grid_1: &mut GridBox,
-    grid_2: &mut GridBox,
-    block: &mut BlockSet,
+    grid: &mut GridSystem,
     best: &mut SolveResult,
     params: McParams,
 ) -> u32 {
@@ -340,57 +372,22 @@ pub fn mc_run(
         }
 
         if need_erase {
-            for &p in block.half1.iter() {
-                grid_1.remove(p);
-            }
-            for &p in block.half2.iter() {
-                grid_2.remove(p);
-            }
-            block.half_reset();
-            if params.erase_small_th > 0 {
-                while let Some((p1, p2)) = block.pop_small(params.erase_small_th) {
-                    for p in p1 {
-                        grid_1.remove(p);
-                    }
-                    for p in p2 {
-                        grid_2.remove(p);
-                    }
-                }
-            }
+            grid.erase_half(params.erase_small_th);
         }
-        let before_state = (grid_1.clone(), grid_2.clone(), block.clone());
+        let before_state = grid.clone();
 
-        if !block.shared.is_empty() && rng.gen_bool(params.erase_shared_p) {
-            let (p1, p2) = block.pop_random(rng);
-            for p in p1 {
-                grid_1.remove(p);
-            }
-            for p in p2 {
-                grid_2.remove(p);
-            }
-        }
+        grid.erase_shared(rng, params.erase_shared_p);
 
-        let sos = block.shared_only_score();
+        let sos = grid.block.shared_only_score();
         let cut_off = score - sos;
-        let new_score = sos
-            + fill_all(
-                rng,
-                &hole_1.x_z_yy,
-                &hole_2.x_z_yy,
-                grid_1,
-                grid_2,
-                block,
-                cut_off,
-            )
-            .unwrap_or(1e100);
+        let new_score =
+            sos + fill_all(rng, &hole_1.x_z_yy, &hole_2.x_z_yy, grid, cut_off).unwrap_or(1e100);
         if new_score < score {
             score = new_score;
-            best.set_best(grid_1, grid_2, score);
+            best.set_best(&grid.grid_1, &grid.grid_2, score);
             need_erase = true;
         } else {
-            *grid_1 = before_state.0;
-            *grid_2 = before_state.1;
-            *block = before_state.2;
+            *grid = before_state;
             need_erase = false;
         }
     }
@@ -436,11 +433,13 @@ impl SolveResult {
 }
 
 pub fn mc_solve(rng: &mut Mcg128Xsl64, input: &SolveInput, d: u8) -> SolveResult {
-    let mut grid_1 = GridBox::new(d, &input.front1, &input.right1);
-    let mut grid_2 = GridBox::new(d, &input.front2, &input.right2);
-    let hole_1 = grid_1.make_hole();
-    let hole_2 = grid_2.make_hole();
-    let mut block = BlockSet::new();
+    let mut grid = GridSystem {
+        grid_1: GridBox::new(d, &input.front1, &input.right1),
+        grid_2: GridBox::new(d, &input.front2, &input.right2),
+        block: BlockSet::new(),
+    };
+    let hole_1 = grid.grid_1.make_hole();
+    let hole_2 = grid.grid_2.make_hole();
 
     let mut best = SolveResult::worst();
     for i in 0..input.params.mc_run {
@@ -456,15 +455,13 @@ pub fn mc_solve(rng: &mut Mcg128Xsl64, input: &SolveInput, d: u8) -> SolveResult
             rng,
             &hole_1,
             &hole_2,
-            &mut grid_1,
-            &mut grid_2,
-            &mut block,
+            &mut grid,
             &mut best,
             input.params,
         );
-        grid_1.reset(&hole_1);
-        grid_2.reset(&hole_2);
-        block.reset();
+        grid.grid_1.reset(&hole_1);
+        grid.grid_2.reset(&hole_2);
+        grid.block.reset();
         best.run_count += step;
     }
     best
