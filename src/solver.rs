@@ -287,17 +287,10 @@ pub fn sa_run(
     grid_1: &mut GridBox,
     grid_2: &mut GridBox,
     block: &mut BlockSet,
+    best: &mut SolveResult,
     params: McParams,
-) -> ((Vec<u16>, Vec<u16>, f64), u32) {
-    let mut best = loop {
-        grid_1.reset(&hole_1);
-        grid_2.reset(&hole_2);
-        block.reset();
-        if let Some(score) = fill_all(rng, &hole_1, &hole_2, grid_1, grid_2, block, 1e100) {
-            break (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
-        }
-    };
-    let mut score = best.2;
+) -> u32 {
+    let mut score = 1e100;
     let mut elapsed = start.elapsed();
     let mut step = 0;
     let mut need_erase = true;
@@ -309,7 +302,7 @@ pub fn sa_run(
             elapsed
         };
         if elapsed > limit {
-            break (best, step);
+            break step;
         }
         let temperature = params.temperature(limit, elapsed);
 
@@ -350,9 +343,7 @@ pub fn sa_run(
             sos + fill_all(rng, &hole_1, &hole_2, grid_1, grid_2, block, cut_off).unwrap_or(1e100);
         if new_score < score || rng.gen_bool(((score - new_score) / temperature).exp()) {
             score = new_score;
-            if score < best.2 {
-                best = (grid_1.grid.data.clone(), grid_2.grid.data.clone(), score);
-            }
+            best.set_best(&grid_1, &grid_2, score);
             need_erase = true;
         } else {
             *grid_1 = before_state.0;
@@ -380,11 +371,10 @@ impl SolveResult {
         }
     }
 
-    pub fn set_best(&mut self, g1: Vec<u16>, g2: Vec<u16>, score: f64, mc: u32) -> bool {
-        self.run_count += mc;
+    pub fn set_best(&mut self, g1: &GridBox, g2: &GridBox, score: f64) -> bool {
         if score < self.score {
-            self.g1 = g1;
-            self.g2 = g2;
+            self.g1 = g1.grid.data.clone();
+            self.g2 = g2.grid.data.clone();
             self.score = score;
             true
         } else {
@@ -415,7 +405,7 @@ pub fn mc_solve(
         let rest_run = params.mc_run - i;
         let total_mill = (limit - start.elapsed()).as_millis() as u64;
         let sub_limit = Duration::from_millis(total_mill / rest_run);
-        let ((g1, g2, score), step) = sa_run(
+        let step = sa_run(
             Instant::now(),
             sub_limit,
             rng,
@@ -424,9 +414,13 @@ pub fn mc_solve(
             &mut grid_1,
             &mut grid_2,
             &mut block,
+            &mut best,
             params,
         );
-        best.set_best(g1, g2, score, step);
+        grid_1.reset(&hole_1);
+        grid_2.reset(&hole_2);
+        block.reset();
+        best.run_count += step;
     }
     best
 }
