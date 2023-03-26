@@ -1,5 +1,3 @@
-#![allow(non_snake_case, unused_macros)]
-
 use proconio::{input, marker::Bytes};
 use rand::prelude::*;
 
@@ -41,23 +39,23 @@ pub struct Output {
 
 #[derive(Clone, Debug)]
 pub struct Input {
-    pub D: usize,
+    pub d: usize,
     pub f: Vec<Vec<Vec<i32>>>,
     pub r: Vec<Vec<Vec<i32>>>,
 }
 
 impl std::fmt::Display for Input {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self.D)?;
+        writeln!(f, "{}", self.d)?;
         for i in 0..2 {
-            for z in 0..self.D {
-                for x in 0..self.D {
+            for z in 0..self.d {
+                for x in 0..self.d {
                     write!(f, "{}", self.f[i][z][x])?;
                 }
                 writeln!(f)?;
             }
-            for z in 0..self.D {
-                for x in 0..self.D {
+            for z in 0..self.d {
+                for x in 0..self.d {
                     write!(f, "{}", self.r[i][z][x])?;
                 }
                 writeln!(f)?;
@@ -71,24 +69,24 @@ pub fn parse_input(f: &str) -> Input {
     let mut f = proconio::source::once::OnceSource::from(f);
     input! {
         from &mut f,
-        D: usize,
+        d: usize,
     }
-    let mut fs = mat![0; 2; D; D];
-    let mut rs = mat![0; 2; D; D];
+    let mut fs = mat![0; 2; d; d];
+    let mut rs = mat![0; 2; d; d];
     for i in 0..2 {
         input! {
             from &mut f,
-            F: [Bytes; D],
-            R: [Bytes; D],
+            f: [Bytes; d],
+            r: [Bytes; d],
         }
-        for z in 0..D {
-            for x in 0..D {
-                fs[i][z][x] = (F[z][x] - b'0') as i32;
-                rs[i][z][x] = (R[z][x] - b'0') as i32;
+        for z in 0..d {
+            for x in 0..d {
+                fs[i][z][x] = (f[z][x] - b'0') as i32;
+                rs[i][z][x] = (r[z][x] - b'0') as i32;
             }
         }
     }
-    Input { D, f: fs, r: rs }
+    Input { d, f: fs, r: rs }
 }
 
 fn read<T: Copy + PartialOrd + std::fmt::Display + std::str::FromStr>(
@@ -112,13 +110,13 @@ fn read<T: Copy + PartialOrd + std::fmt::Display + std::str::FromStr>(
 }
 
 pub fn parse_output(input: &Input, f: &str) -> Result<Output, String> {
-    let mut b = mat![0; 2; input.D; input.D; input.D];
+    let mut b = mat![0; 2; input.d; input.d; input.d];
     let mut tokens = f.split_whitespace();
     let n = read(tokens.next(), 0, 1000000)?;
     for i in 0..2 {
-        for x in 0..input.D {
-            for y in 0..input.D {
-                for z in 0..input.D {
+        for x in 0..input.d {
+            for y in 0..input.d {
+                for z in 0..input.d {
                     b[i][x][y][z] = read(tokens.next(), 0, n)?;
                 }
             }
@@ -206,13 +204,13 @@ pub const D3: [(usize, usize, usize); 6] = [
 
 pub fn compute_score(input: &Input, out: &Output) -> (i64, String) {
     let mut pos = mat![vec![]; 2; out.n];
-    let mut visited = mat![false; 2; input.D; input.D; input.D];
+    let mut visited = mat![false; 2; input.d; input.d; input.d];
     for i in 0..2 {
-        let mut f = mat![0; input.D; input.D];
-        let mut r = mat![0; input.D; input.D];
-        for x in 0..input.D {
-            for y in 0..input.D {
-                for z in 0..input.D {
+        let mut f = mat![0; input.d; input.d];
+        let mut r = mat![0; input.d; input.d];
+        for x in 0..input.d {
+            for y in 0..input.d {
+                for z in 0..input.d {
                     let id = out.b[i][x][y][z];
                     if id != 0 {
                         f[z][x] = 1;
@@ -226,9 +224,9 @@ pub fn compute_score(input: &Input, out: &Output) -> (i64, String) {
                                     let x2 = x + dx;
                                     let y2 = y + dy;
                                     let z2 = z + dz;
-                                    if x2 < input.D
-                                        && y2 < input.D
-                                        && z2 < input.D
+                                    if x2 < input.d
+                                        && y2 < input.d
+                                        && z2 < input.d
                                         && out.b[i][x2][y2][z2] == id
                                         && !visited[i][x2][y2][z2]
                                     {
@@ -282,7 +280,7 @@ pub fn compute_score(input: &Input, out: &Output) -> (i64, String) {
     (score, String::new())
 }
 
-pub fn gen(seed: u64, custom_D: Option<usize>) -> Input {
+pub fn gen(seed: u64, custom_d: Option<usize>) -> Input {
     if seed == 0 {
         return parse_input(
             r#"5
@@ -310,15 +308,15 @@ pub fn gen(seed: u64, custom_D: Option<usize>) -> Input {
         );
     }
     let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(seed);
-    let mut D = rng.gen_range(5i32, 15) as usize;
-    if let Some(custom_D) = custom_D {
-        D = custom_D;
+    let mut d = rng.gen_range(5i32, 15) as usize;
+    if let Some(custom_d) = custom_d {
+        d = custom_d;
     }
-    let mut f = mat![0; 2; D; D];
-    let mut r = mat![0; 2; D; D];
+    let mut f = mat![0; 2; d; d];
+    let mut r = mat![0; 2; d; d];
     let mut p = vec![0.0; 5];
-    for d in 1..5 {
-        p[d] = (D as f64).powf(rng.gen_range(-1.0, 1.0) + if d >= 3 { 0.5 } else { 0.0 });
+    for dir in 1..5 {
+        p[dir] = (d as f64).powf(rng.gen_range(-1.0, 1.0) + if dir >= 3 { 0.5 } else { 0.0 });
     }
     for i in 0..4 {
         let g = if i % 2 == 0 {
@@ -327,17 +325,17 @@ pub fn gen(seed: u64, custom_D: Option<usize>) -> Input {
             &mut r[i / 2]
         };
         loop {
-            let num = rng.gen_range(D as i32 * 2, (D * D / 2) as i32 + 1);
-            for z in 0..D {
-                for x in 0..D {
+            let num = rng.gen_range(d as i32 * 2, (d * d / 2) as i32 + 1);
+            for z in 0..d {
+                for x in 0..d {
                     g[z][x] = 0;
                 }
             }
-            let mut deg = mat![0; D; D];
+            let mut deg = mat![0; d; d];
             for _ in 0..num {
                 let mut ws = vec![];
-                for z in 0..D {
-                    for x in 0..D {
+                for z in 0..d {
+                    for x in 0..d {
                         if g[z][x] == 0 && deg[z][x] > 0 {
                             ws.push((z, x, p[deg[z][x]]));
                         }
@@ -347,8 +345,8 @@ pub fn gen(seed: u64, custom_D: Option<usize>) -> Input {
                     *ws.choose_weighted(&mut rng, |&(_, _, w)| w).unwrap()
                 } else {
                     (
-                        rng.gen_range(0, D as i32) as usize,
-                        rng.gen_range(0, D as i32) as usize,
+                        rng.gen_range(0, d as i32) as usize,
+                        rng.gen_range(0, d as i32) as usize,
                         0.0,
                     )
                 };
@@ -356,13 +354,13 @@ pub fn gen(seed: u64, custom_D: Option<usize>) -> Input {
                 for &(dz, dx) in &D2 {
                     let z2 = z + dz;
                     let x2 = x + dx;
-                    if z2 < D && x2 < D {
+                    if z2 < d && x2 < d {
                         deg[z2][x2] += 1;
                     }
                 }
             }
             let mut ok = true;
-            for z in 0..D {
+            for z in 0..d {
                 ok &= g[z].iter().any(|&v| v == 1);
             }
             if ok {
@@ -370,5 +368,5 @@ pub fn gen(seed: u64, custom_D: Option<usize>) -> Input {
             }
         }
     }
-    Input { D, f, r }
+    Input { d, f, r }
 }

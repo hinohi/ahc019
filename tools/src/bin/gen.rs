@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use clap::Parser;
 use std::{io::prelude::*, path::PathBuf};
 use tools::*;
@@ -9,8 +7,8 @@ struct Cli {
     /// Path to seeds.txt
     seeds: String,
     /// Fix D to the specified value
-    #[clap(long = "D")]
-    D: Option<usize>,
+    #[clap(long = "d")]
+    d: Option<usize>,
     /// Path to input directory
     #[clap(long = "dir", default_value = "in")]
     dir: PathBuf,
@@ -37,7 +35,7 @@ fn main() {
             eprintln!("parse failed: {}", line);
             std::process::exit(1)
         });
-        let input = gen(seed, cli.D);
+        let input = gen(seed, cli.d);
         let mut w = std::io::BufWriter::new(
             std::fs::File::create(cli.dir.join(format!("{:04}.txt", id))).unwrap(),
         );
