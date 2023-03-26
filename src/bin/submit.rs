@@ -44,11 +44,11 @@ fn get_params(d: u8) -> McParams {
             erase_small_th: 8,
             mc_run: 100,
         },
-        // -1.0383037291956507
+        // -1.062290396485194
         7 => McParams {
-            erase_shared_p: 0.5276321643573454,
+            erase_shared_p: 0.3526343942727514,
             erase_small_th: 11,
-            mc_run: 65,
+            mc_run: 64,
         },
         // -1.0700763969294835
         8 => McParams {
@@ -62,11 +62,11 @@ fn get_params(d: u8) -> McParams {
             erase_small_th: 17,
             mc_run: 31,
         },
-        // -1.1916639012730843
+        // -1.1982188777388496
         10 => McParams {
-            erase_shared_p: 0.5750391690408527,
-            erase_small_th: 21,
-            mc_run: 56,
+            erase_shared_p: 0.44152202788755307,
+            erase_small_th: 20,
+            mc_run: 51,
         },
         // -1.0348616264530257
         11 => McParams {
@@ -80,17 +80,17 @@ fn get_params(d: u8) -> McParams {
             erase_small_th: 37,
             mc_run: 56,
         },
-        // -1.407338859035549
+        // -1.4204831877285795
         13 => McParams {
-            erase_shared_p: 0.5669638180845599,
-            erase_small_th: 47,
-            mc_run: 23,
+            erase_shared_p: 0.652187537788713,
+            erase_small_th: 50,
+            mc_run: 35,
         },
-        // -1.5757117753234124
+        // -1.6196117306757933
         14 => McParams {
-            erase_shared_p: 0.7236849754072749,
-            erase_small_th: 52,
-            mc_run: 46,
+            erase_shared_p: 0.7227385983082774,
+            erase_small_th: 60,
+            mc_run: 17,
         },
         _ => unreachable!(),
     }
