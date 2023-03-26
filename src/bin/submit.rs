@@ -34,43 +34,53 @@ fn get_params(d: u8) -> McParams {
     match d {
         5 => McParams {
             erase_small_th: 5,
-            erase_big_p: 0.3,
+            mc_run: 60,
+            erase_shared_p: 0.8425078049911343,
         },
         6 => McParams {
             erase_small_th: 5,
-            erase_big_p: 0.3,
+            mc_run: 60,
+            erase_shared_p: 0.8,
         },
         7 => McParams {
             erase_small_th: 7,
-            erase_big_p: 0.3,
+            mc_run: 60,
+            erase_shared_p: 0.8,
         },
         8 => McParams {
             erase_small_th: 14,
-            erase_big_p: 0.3,
+            mc_run: 58,
+            erase_shared_p: 0.5495226119501073,
         },
         9 => McParams {
             erase_small_th: 17,
-            erase_big_p: 0.3,
+            mc_run: 40,
+            erase_shared_p: 0.8,
         },
         10 => McParams {
             erase_small_th: 20,
-            erase_big_p: 0.3,
+            mc_run: 30,
+            erase_shared_p: 0.8,
         },
         11 => McParams {
             erase_small_th: 24,
-            erase_big_p: 0.3,
+            mc_run: 17,
+            erase_shared_p: 0.7110038338185328,
         },
         12 => McParams {
             erase_small_th: 27,
-            erase_big_p: 0.3,
+            mc_run: 18,
+            erase_shared_p: 0.75,
         },
         13 => McParams {
             erase_small_th: 35,
-            erase_big_p: 0.3,
+            mc_run: 19,
+            erase_shared_p: 0.75,
         },
         14 => McParams {
             erase_small_th: 43,
-            erase_big_p: 0.3,
+            mc_run: 20,
+            erase_shared_p: 0.7639041770255723,
         },
         _ => unreachable!(),
     }
@@ -97,9 +107,6 @@ fn main() {
     };
     let mut rng = Mcg128Xsl64::new(9085);
     let result = mc_solve(&mut rng, &input, d);
-    eprintln!(
-        "{} {} {}",
-        result.run_count, result.best_update_count, result.score
-    );
+    eprintln!("{} {}", result.run_count, result.score);
     print_ans(&result.g1, &result.g2);
 }
