@@ -32,11 +32,11 @@ impl McParams {
                 erase_small_th: 14,
                 mc_run: 78,
             },
-            // -1.1036122300059443
+            // -1.114248273423888
             9 => McParams {
-                erase_shared_p: 0.6772038451250363,
-                erase_small_th: 17,
-                mc_run: 31,
+                erase_shared_p: 0.5778111909809597,
+                erase_small_th: 21,
+                mc_run: 30,
             },
             // -1.2071752742275605
             10 => McParams {
@@ -56,11 +56,11 @@ impl McParams {
                 erase_small_th: 39,
                 mc_run: 47,
             },
-            // -1.4204831877285795
+            // -1.429345287977688
             13 => McParams {
-                erase_shared_p: 0.652187537788713,
-                erase_small_th: 50,
-                mc_run: 35,
+                erase_shared_p: 0.653866755894219,
+                erase_small_th: 48,
+                mc_run: 24,
             },
             // -1.6196117306757933
             14 => McParams {
