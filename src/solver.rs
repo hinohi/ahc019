@@ -18,7 +18,14 @@ pub struct YetPointSet {
     can: SmallVec<[Point; 16]>,
 }
 
-type Hole = (u8, u8, Vec<u8>);
+pub type HoleXZYY = (u8, u8, Vec<u8>);
+
+pub struct Hole {
+    pub x_z_yy: Vec<HoleXZYY>,
+    pub grid: Vec<usize>,
+    pub front: Vec<usize>,
+    pub right: Vec<usize>,
+}
 
 pub fn make_face(shadow: &[Vec<u8>], t: bool) -> Vec<u8> {
     let d = shadow.len();
@@ -60,20 +67,47 @@ impl GridBox {
         }
     }
 
-    pub fn reset(&mut self, hole: &[Hole]) {
-        for (x, z, yy) in hole.iter() {
-            let x = *x;
-            let z = *z;
-            self.front[(x, z)] = 0;
-            for &y in yy.iter() {
-                self.right[(y, z)] = 0;
-                let p = Point::new(x, y, z);
-                self.grid[p] = 0;
-            }
+    pub fn reset(&mut self, hole: &Hole) {
+        for &i in hole.grid.iter() {
+            self.grid.data[i] = 0;
+        }
+        for &i in hole.front.iter() {
+            self.front.data[i] = 0;
+        }
+        for &i in hole.right.iter() {
+            self.right.data[i] = 0;
         }
     }
 
-    pub fn make_hole_xzy(&self) -> Vec<Hole> {
+    pub fn make_hole(&self) -> Hole {
+        Hole {
+            x_z_yy: self.make_hole_xzy(),
+            grid: self
+                .grid
+                .data
+                .iter()
+                .enumerate()
+                .filter_map(|(i, &c)| if c == 0 { Some(i) } else { None })
+                .collect(),
+            front: self
+                .front
+                .data
+                .iter()
+                .enumerate()
+                .filter_map(|(i, &c)| if c == 0 { Some(i) } else { None })
+                .collect(),
+
+            right: self
+                .right
+                .data
+                .iter()
+                .enumerate()
+                .filter_map(|(i, &c)| if c == 0 { Some(i) } else { None })
+                .collect(),
+        }
+    }
+
+    pub fn make_hole_xzy(&self) -> Vec<HoleXZYY> {
         let mut v = Vec::new();
         for x in 0..self.d {
             for z in 0..self.d {
@@ -96,7 +130,7 @@ impl GridBox {
         v
     }
 
-    pub fn make_yet_points(&self, hole: &[Hole]) -> YetPointSet {
+    pub fn make_yet_points(&self, hole: &[HoleXZYY]) -> YetPointSet {
         let mut yet_yet = SmallVec::new();
         let mut yet = SmallVec::new();
         let mut can = SmallVec::new();
@@ -207,8 +241,8 @@ fn grow_shared_block(
 
 fn fill_all(
     rng: &mut Mcg128Xsl64,
-    hole_1: &[Hole],
-    hole_2: &[Hole],
+    hole_1: &[HoleXZYY],
+    hole_2: &[HoleXZYY],
     grid_1: &mut GridBox,
     grid_2: &mut GridBox,
     block: &mut BlockSet,
@@ -282,8 +316,8 @@ pub fn mc_run(
     start: Instant,
     limit: Duration,
     rng: &mut Mcg128Xsl64,
-    hole_1: &[Hole],
-    hole_2: &[Hole],
+    hole_1: &Hole,
+    hole_2: &Hole,
     grid_1: &mut GridBox,
     grid_2: &mut GridBox,
     block: &mut BlockSet,
@@ -338,8 +372,17 @@ pub fn mc_run(
 
         let sos = block.shared_only_score();
         let cut_off = score - sos;
-        let new_score =
-            sos + fill_all(rng, hole_1, hole_2, grid_1, grid_2, block, cut_off).unwrap_or(1e100);
+        let new_score = sos
+            + fill_all(
+                rng,
+                &hole_1.x_z_yy,
+                &hole_2.x_z_yy,
+                grid_1,
+                grid_2,
+                block,
+                cut_off,
+            )
+            .unwrap_or(1e100);
         if new_score < score {
             score = new_score;
             best.set_best(grid_1, grid_2, score);
@@ -395,8 +438,8 @@ impl SolveResult {
 pub fn mc_solve(rng: &mut Mcg128Xsl64, input: &SolveInput, d: u8) -> SolveResult {
     let mut grid_1 = GridBox::new(d, &input.front1, &input.right1);
     let mut grid_2 = GridBox::new(d, &input.front2, &input.right2);
-    let hole_1 = grid_1.make_hole_xzy();
-    let hole_2 = grid_2.make_hole_xzy();
+    let hole_1 = grid_1.make_hole();
+    let hole_2 = grid_2.make_hole();
     let mut block = BlockSet::new();
 
     let mut best = SolveResult::worst();
