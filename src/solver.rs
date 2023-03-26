@@ -403,6 +403,9 @@ pub fn mc_solve(rng: &mut Mcg128Xsl64, input: &SolveInput, d: u8) -> SolveResult
     let mut best = SolveResult::worst();
     for i in 0..input.params.mc_run {
         let rest_run = input.params.mc_run - i;
+        if input.limit >= input.start.elapsed() {
+            break;
+        }
         let total_mill = (input.limit - input.start.elapsed()).as_millis() as u64;
         let sub_limit = Duration::from_millis(total_mill / rest_run);
         let step = sa_run(
