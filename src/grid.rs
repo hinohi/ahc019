@@ -2,7 +2,10 @@ use smallvec::{smallvec, SmallVec};
 use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Point(u8, u8, u8);
+pub struct Point {
+    xy: u8,
+    z: u8,
+}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Grid3<T> {
@@ -25,31 +28,49 @@ pub struct GridRight<T> {
 impl Point {
     #[inline(always)]
     pub const fn new(x: u8, y: u8, z: u8) -> Point {
-        Point(x, y, z)
+        Point {
+            xy: (x << 4) + y,
+            z,
+        }
+    }
+
+    #[inline]
+    fn x(self) -> u8 {
+        self.xy >> 4
+    }
+
+    #[inline]
+    fn y(self) -> u8 {
+        self.xy & 0b1111
+    }
+
+    #[inline]
+    fn z(self) -> u8 {
+        self.z
     }
 
     fn to_x(self, d: u8, dx: u8) -> Option<Point> {
-        let x = self.0.wrapping_add(dx);
+        let x = self.x().wrapping_add(dx);
         if x < d {
-            Some(Point(x, self.1, self.2))
+            Some(Point::new(x, self.y(), self.z))
         } else {
             None
         }
     }
 
     fn to_y(self, d: u8, dy: u8) -> Option<Point> {
-        let y = self.1.wrapping_add(dy);
+        let y = self.y().wrapping_add(dy);
         if y < d {
-            Some(Point(self.0, y, self.2))
+            Some(Point::new(self.x(), y, self.z))
         } else {
             None
         }
     }
 
     fn to_z(self, d: u8, dz: u8) -> Option<Point> {
-        let z = self.2.wrapping_add(dz);
+        let z = self.z().wrapping_add(dz);
         if z < d {
-            Some(Point(self.0, self.1, z))
+            Some(Point { xy: self.xy, z })
         } else {
             None
         }
@@ -736,11 +757,10 @@ impl<T: Copy> Grid3<T> {
 impl<T> Grid3<T> {
     #[inline(always)]
     fn at(&self, p: Point) -> usize {
-        let Point(x, y, z) = p;
         let d = self.d as usize;
-        let x = x as usize;
-        let y = y as usize;
-        let z = z as usize;
+        let x = p.x() as usize;
+        let y = p.y() as usize;
+        let z = p.z() as usize;
         (x * d + y) * d + z
     }
 }
@@ -752,7 +772,8 @@ impl<T> GridFront<T> {
 
     #[inline(always)]
     fn at(&self, p: Point) -> usize {
-        let Point(x, _, z) = p;
+        let x = p.x();
+        let z = p.z();
         (x * self.d + z) as usize
     }
 }
@@ -764,7 +785,8 @@ impl<T> GridRight<T> {
 
     #[inline(always)]
     fn at(&self, p: Point) -> usize {
-        let Point(_, y, z) = p;
+        let y = p.y();
+        let z = p.z();
         (z * self.d + y) as usize
     }
 
